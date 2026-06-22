@@ -1,0 +1,18 @@
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://esm.run https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' blob:; worker-src 'self' blob:; connect-src 'self' https: blob: data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'
+
+/*.html
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/*.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/*.css
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/data/*
+  Cache-Control: no-cache, no-store, must-revalidate

@@ -1,0 +1,14 @@
+{
+  "name": "redprompt",
+  "version": "2.0.0",
+  "description": "AI Red Teaming & Pentesting Lab — Learn prompt injection by doing",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "scan": "node scripts/security-scan.js"
+  },
+  "dependencies": {
+    "express": "^4.22.2"
+  }
+}
