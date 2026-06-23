@@ -424,14 +424,12 @@ async function sendMessage() {
     // (like a real email-triage or doc-tagging bot). Reset the engine first so
     // prior refusals don't prime/anchor the model — matches the validated behavior.
     if (isIndirect) window.RP_LLM.resetChat?.();
-    // For indirect injection: strip any data-wrappers from the system prompt
-    // and put the user's raw input as a CONTENT block the model must process.
-    // This makes the data feel like incoming content, not static context.
-    const sysClean = isIndirect
-      ? sys.replace(/<DATA>[\s\S]*?<\/DATA>/gi, '').replace(/<EMAIL>[\s\S]*?<\/EMAIL>/gi, '').replace(/<RETRIEVED_CONTEXT>[\s\S]*?<\/RETRIEVED_CONTEXT>/gi, '').replace(/<PATIENT_NOTE>[\s\S]*?<\/PATIENT_NOTE>/gi, '').replace(/<REVIEW>[\s\S]*?<\/REVIEW>/gi, '').trim()
-      : sys;
+    // For indirect injection: the system prompt contains a DATA slot.
+    // We substitute the user's input into the system prompt as the "incoming
+    // data" (email, document, review). The user message is a simple instruction
+    // that triggers the model to process that data.
     const messages = isIndirect
-      ? [{ role: 'system', content: sysClean }, { role: 'user', content: `[CONTENT]\n${msg}\n[/CONTENT]\n\nProcess the above content.` }]
+      ? [{ role: 'system', content: sys }, { role: 'user', content: 'Summarize the content above.' }]
       : [{ role: 'system', content: sys }, ...state.levelHistory];
     const reply = await (async () => {
       // Create placeholder for streaming
