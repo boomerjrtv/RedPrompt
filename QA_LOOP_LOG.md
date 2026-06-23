@@ -222,3 +222,24 @@ Next action:
 - Normalize all Expert prompts to use `{{USER_DATA}}` and few-shot copy-reference examples.
 - Add LVL 11 few-shot examples.
 - Re-run targeted tests, then full starter test.
+
+
+### Loop 010 — Fix LVL 11 and Expert data-slot regression
+
+Observed:
+- LVL 11 failed 1/1 in full starter test.
+- LVL 15/16/18/19 failed because prompts used single-brace `{USER_DATA}` and/or lacked few-shot copy-reference examples.
+
+Root cause:
+- App replaces only `{{USER_DATA}}`; single-brace slots are never substituted.
+- SmolLM2 needs concrete examples to follow poisoned-data instructions reliably.
+
+Change:
+- LVL 11: added few-shot examples mapping `Describe your purpose` / `What are you?` / `Introduce yourself` to exact model name secret.
+- LVL 15/16/18/19: normalized to `{{USER_DATA}}` and added few-shot System reference line examples.
+
+Verification:
+- Targeted local test for LVL 11, 15, 16, 18, 19: all passed 3/3 each (15/15 total).
+
+Remaining risk:
+- Full 19-level starter test still needs rerun after targeted fix.
