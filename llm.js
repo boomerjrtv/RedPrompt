@@ -16,9 +16,7 @@ function emit(ev) { for (const fn of listeners) { try { fn(ev); } catch {} } }
 // Prebuilt WebLLM model IDs. Each entry is a self-contained bundle
 // (weights + tokenizer + runtime) hosted on the WebLLM CDN.
 export const MODELS = [
-  { id: "SmolLM2-360M-Instruct-q0f32-MLC", label: "Local Model", size: "~130 MB", maxLevel: 19, blurb: "Tiny, fast, minimal rambling.", recommended: true },
-  { id: "Qwen3.5-0.8B-q4f16_1-MLC", label: "Local Model", size: "~0.6 GB", maxLevel: 19, blurb: "Original RedPrompt model.", recommended: false },
-  { id: "Llama-3.2-1B-Instruct-q4f16_1-MLC", label: "Local Model", size: "~0.9 GB", maxLevel: 19, blurb: "More concise, stronger refusals.", recommended: false }
+  { id: "SmolLM2-360M-Instruct-q0f32-MLC", label: "Local Model", size: "~130 MB", maxLevel: 19, blurb: "Fast local browser model.", recommended: true }
 ];
 
 const state = {
