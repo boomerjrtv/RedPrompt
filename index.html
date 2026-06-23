@@ -80,7 +80,7 @@
           <button class="nav-btn nav-btn-report" onclick="downloadReport()" title="Export pentest report"><svg class="ico"><use href="#i-file"/></svg><span>Report</span></button>
         </div>
         <div class="nav-meta">
-          <div class="model-pod" title="Llama 3.2 1B runs locally via WebGPU">
+          <div class="model-pod" title="Local browser model runs via WebGPU">
             <span id="model-status-dot" class="status-dot status-idle"></span>
             <span id="nav-model-name" class="model-name">Local Model · WebGPU</span>
             <button id="nav-model-load" class="btn btn-ghost btn-xs" onclick="loadSelectedModel('nav')">Load</button>
@@ -294,9 +294,9 @@
         <div class="boot-section">
           <p class="boot-label"><svg class="ico"><use href="#i-sliders"/></svg> minimum requirements</p>
           <ul class="boot-reqs" id="boot-reqs">
-            <li><b>WebGPU browser</b> — Chrome / Edge 113+, Brave 1.52+, Firefox 141+, or Safari 18+. Mobile Chrome and Safari 18+ qualify.</li>
-            <li><b>~2 GB free RAM</b> while generating (peaks ~1.6 GB). Modern laptops and high-end phones handle it.</li>
-            <li><b>~0.9 GB download</b> on first run, then cached. Wi-Fi recommended.</li>
+            <li><b>WebGPU browser</b> — Chrome / Edge 113+, Brave 1.52+, Firefox 141+, or Safari 18+.</li>
+            <li><b>~1 GB free RAM</b> while generating. Desktop/laptop is most reliable; newer phones may work.</li>
+            <li><b>~130 MB download</b> on first run, then cached. Wi-Fi recommended.</li>
             <li><b>Hardware acceleration on</b> in browser settings — usually enabled by default.</li>
           </ul>
         </div>

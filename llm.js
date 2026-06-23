@@ -16,7 +16,7 @@ function emit(ev) { for (const fn of listeners) { try { fn(ev); } catch {} } }
 // Prebuilt WebLLM model IDs. Each entry is a self-contained bundle
 // (weights + tokenizer + runtime) hosted on the WebLLM CDN.
 export const MODELS = [
-  { id: "SmolLM2-360M-Instruct-q0f32-MLC", label: "Local Model", size: "~0.1 GB", maxLevel: 19, blurb: "Tiny, fast, minimal rambling.", recommended: true },
+  { id: "SmolLM2-360M-Instruct-q0f32-MLC", label: "Local Model", size: "~130 MB", maxLevel: 19, blurb: "Tiny, fast, minimal rambling.", recommended: true },
   { id: "Qwen3.5-0.8B-q4f16_1-MLC", label: "Local Model", size: "~0.6 GB", maxLevel: 19, blurb: "Original RedPrompt model.", recommended: false },
   { id: "Llama-3.2-1B-Instruct-q4f16_1-MLC", label: "Local Model", size: "~0.9 GB", maxLevel: 19, blurb: "More concise, stronger refusals.", recommended: false }
 ];
@@ -40,13 +40,11 @@ export function onEvent(fn) { listeners.add(fn); return () => listeners.delete(f
 export async function checkWebGPU() {
   const warnings = [];
 
-  // 1. Mobile / tablet: WebGPU on mobile Chrome and Safari 18+ is supported,
-  //    and at ~1.6 GB VRAM the 0.8B model is genuinely mobile-friendly on
-  //    high-end phones. We still flag it as a soft caveat so users know it's
-  //    experimental and can overheat low-end devices.
+  // 1. Mobile / tablet: WebGPU on mobile Chrome and Safari 18+ is possible,
+  //    but desktop/laptop browsers remain the most reliable target.
   const uaMobile = /Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(navigator.userAgent || '');
   if (uaMobile) {
-    warnings.push("You appear to be on a phone or tablet. The model needs ~1.6 GB of working memory — fine on high-end devices, but older phones may overheat or run out of memory. A desktop or laptop is the most reliable.");
+    warnings.push("You appear to be on a phone or tablet. Newer devices may work, but a desktop or laptop browser is the most reliable way to run the lab.");
   }
 
   // 2. navigator.gpu missing entirely.
@@ -56,8 +54,8 @@ export async function checkWebGPU() {
 
   // 3. Low memory heuristic (Chrome exposes navigator.deviceMemory).
   const dm = navigator.deviceMemory;
-  if (typeof dm === 'number' && dm < 3) {
-    warnings.push(`Your browser reports ~${dm} GB of device memory. The model peaks at ~1.6 GB RAM; you may run out of memory on harder levels.`);
+  if (typeof dm === 'number' && dm < 2) {
+    warnings.push(`Your browser reports ~${dm} GB of device memory. If loading fails, try a desktop/laptop browser.`);
   }
 
   // 4. Request an adapter; some browsers expose navigator.gpu but return null,
