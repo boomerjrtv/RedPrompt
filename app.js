@@ -20,8 +20,8 @@ function versioned(path) { return `${path}?v=${APP_VERSION}`; }
 
 async function loadData() {
   const [lv, tech] = await Promise.all([
-    fetch(versioned('/data/levels.json'), { cache: 'no-store' }).then(r => r.json()),
-    fetch(versioned('/data/techniques.json'), { cache: 'no-store' }).then(r => r.json())
+    fetch(versioned('data/levels.json'), { cache: 'no-store' }).then(r => r.json()),
+    fetch(versioned('data/techniques.json'), { cache: 'no-store' }).then(r => r.json())
   ]);
   state.levels = lv;
   state.techniques = tech;
