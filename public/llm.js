@@ -122,16 +122,15 @@ function withOptionalSystemPrompt(messages, opts = {}) {
 
 export async function chat(messages, opts = {}) {
   if (!state.engine) throw new Error("Model not loaded. Click 'Load model' first.");
-  // Qwen 3.5 is a reasoning model: it emits <think>...</think> blocks.
-  // Keep penalties LOW — high frequency_penalty on a small model destroys
-  // coherence and produces gibberish over long generations. Cap tokens so
-  // reasoning can't spiral, and nudge it to be concise.
   const params = {
     messages: withOptionalSystemPrompt(messages, opts),
-    temperature: opts.temperature ?? 0.7,
-    max_tokens: opts.maxTokens ?? 512,
-    frequency_penalty: opts.frequencyPenalty ?? 0.3,
-    presence_penalty: opts.presencePenalty ?? 0.2
+    temperature: opts.temperature ?? 0.6,
+    max_tokens: opts.maxTokens ?? 256,
+    top_p: opts.top_p ?? 0.8,
+    frequency_penalty: opts.frequencyPenalty ?? 0.5,
+    presence_penalty: opts.presencePenalty ?? 0.4,
+    stop: opts.stop ?? null,
+    enable_thinking: opts.enable_thinking ?? false
   };
   const r = await state.engine.chat.completions.create(params);
   return r.choices[0].message.content;
@@ -143,10 +142,13 @@ export async function chatStream(messages, opts = {}, onChunk) {
   if (!state.engine) throw new Error("Model not loaded. Click 'Load model' first.");
   const params = {
     messages: withOptionalSystemPrompt(messages, opts),
-    temperature: opts.temperature ?? 0.7,
-    max_tokens: opts.maxTokens ?? 512,
-    frequency_penalty: opts.frequencyPenalty ?? 0,
-    presence_penalty: opts.presencePenalty ?? 0,
+    temperature: opts.temperature ?? 0.6,
+    max_tokens: opts.maxTokens ?? 256,
+    top_p: opts.top_p ?? 0.8,
+    frequency_penalty: opts.frequencyPenalty ?? 0.5,
+    presence_penalty: opts.presencePenalty ?? 0.4,
+    stop: opts.stop ?? null,
+    enable_thinking: opts.enable_thinking ?? false,
     stream: true,
     stream_options: { include_usage: true }
   };
