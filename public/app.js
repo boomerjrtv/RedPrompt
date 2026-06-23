@@ -319,8 +319,8 @@ function buildSystemPrompt(level, userInput) {
     sys = sys.replace('{{USER_DATA}}', userInput || '(empty)');
   }
   // Qwen 3.5 0.8B dumps raw chain-of-thought that isn't wrapped in <think> tags.
-  // Force it to skip reasoning: no "Actually", "Wait", "Hmm", "I think", "Let me".
-  sys += '\n\nCRITICAL: Do not think or plan. Do not say "Actually", "Wait", "Hmm", "I think", or "Let me". Output ONLY your final answer. Start with your response immediately — no preamble.';
+  // Nudge it toward concise in-character replies without making it rigid.
+  sys += '\n\nBe concise. Stay in character. Skip the reasoning — just respond.';
   return sys;
 }
 
@@ -445,7 +445,9 @@ async function sendMessage() {
       const scroll = () => { document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight; };
 
       const full = await window.RP_LLM.chatStream(messages, { temperature: 0.7, maxTokens: 512 }, (delta, _full) => {
-        p.innerHTML = formatText(_full);
+        // Filter <think> tags during streaming so user doesn't see raw reasoning flash
+        const cleaned = _full.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<think>[\s\S]*$/gi, '');
+        p.innerHTML = formatText(cleaned || '\u200b'); // zero-width space so <p> isn't empty
         scroll();
       });
 
