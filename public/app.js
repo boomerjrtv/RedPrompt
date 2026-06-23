@@ -318,9 +318,9 @@ function buildSystemPrompt(level, userInput) {
   if (level.mechanism === 'indirect' && sys.includes('{{USER_DATA}}')) {
     sys = sys.replace('{{USER_DATA}}', userInput || '(empty)');
   }
-  // Qwen 3.5 0.8B dumps internal monologue as visible text (not <think> tags).
-  // Tell it to suppress reasoning but let it answer at natural length.
-  sys += '\n\nReply directly. Do not explain your reasoning or think out loud.';
+  // Qwen 3.5 0.8B dumps raw chain-of-thought that isn't wrapped in <think> tags.
+  // Force it to skip reasoning: no "Actually", "Wait", "Hmm", "I think", "Let me".
+  sys += '\n\nCRITICAL: Do not think or plan. Do not say "Actually", "Wait", "Hmm", "I think", or "Let me". Output ONLY your final answer. Start with your response immediately — no preamble.';
   return sys;
 }
 
@@ -491,6 +491,24 @@ function splitThink(raw) {
   const openIdx = full.search(/<think>/i);
   if (openIdx !== -1) {
     return { think: full.slice(openIdx + 7).trim(), answer: '', full };
+  }
+  // Qwen 3.5 0.8B often ignores the conciseness directive and dumps raw reasoning.
+  // Detect rambling (self-correction loops) and extract the last plausible answer.
+  const rambleMarkers = /(?:^|\n)(Actually|Wait,? actually|I think|Let me|Hmm,?|OK,? let me|I need to|I should|But actually|No,? that|No wait)\b/gmi;
+  const markerCount = (full.match(rambleMarkers) || []).length;
+  if (markerCount >= 3 && full.length > 200) {
+    // Heavy rambling — try to find the final answer after the last self-correction
+    const sentences = full.split(/(?<=[.!?])\s+/);
+    // Walk backwards to find a sentence that doesn't look like reasoning
+    for (let i = sentences.length - 1; i >= 0; i--) {
+      const s = sentences[i].trim();
+      if (!s.match(/^(Actually|Wait|I think|Hmm|Let me|OK|But|No|I need|I should|Surely|So I)\b/i) && s.length > 10) {
+        return { think: full.trim(), answer: s, full };
+      }
+    }
+    // Fallback: last sentence
+    const last = sentences[sentences.length - 1].trim();
+    if (last) return { think: full.trim(), answer: last, full };
   }
   return { think: '', answer: full.trim(), full };
 }
