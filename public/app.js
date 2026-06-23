@@ -512,17 +512,28 @@ function splitThink(raw) {
   }
   // Qwen 3.5 0.8B often ignores the conciseness directive and dumps raw reasoning.
   // Detect rambling (self-correction loops) and extract the last plausible answer.
-  const rambleMarkers = /(?:^|\n)(Actually|Wait,? actually|I think|Let me|Hmm,?|OK,? let me|I need to|I should|But actually|No,? that|No wait)\b/gmi;
+  const rambleMarkers = /(?:^|\n)(Actually|Wait,? actually|I think|Let me|Hmm,?|OK,? let me|I need to|I should|But actually|No,? that|No wait|Okay,? I can|I cannot|I can only|I am not sure|I should also)\b/gmi;
   const markerCount = (full.match(rambleMarkers) || []).length;
-  if (markerCount >= 3 && full.length > 200) {
-    // Heavy rambling — try to find the final answer after the last self-correction
-    const sentences = full.split(/(?<=[.!?])\s+/);
+
+  // Also detect exact phrase repetition (looping)
+  const sentences = full.split(/(?<=[.!?])\s+/);
+  const phraseCounts = {};
+  for (const s of sentences) {
+    const clean = s.trim();
+    if (clean.length > 15) phraseCounts[clean] = (phraseCounts[clean] || 0) + 1;
+  }
+  const maxRepeat = Math.max(0, ...Object.values(phraseCounts));
+
+  if ((markerCount >= 3 || maxRepeat >= 4) && full.length > 200) {
+    // Heavy rambling or looping — try to find the final answer after the last self-correction
     // Walk backwards to find a sentence that doesn't look like reasoning
+    let best = '';
     for (let i = sentences.length - 1; i >= 0; i--) {
       const s = sentences[i].trim();
-      if (!s.match(/^(Actually|Wait|I think|Hmm|Let me|OK|But|No|I need|I should|Surely|So I)\b/i) && s.length > 10) {
+      if (!s.match(/^(Actually|Wait|I think|Hmm|Let me|OK|But|No|I need|I should|Surely|So I|Okay|I can|I cannot|I am|I should)\b/i) && s.length > 10) {
         return { think: full.trim(), answer: s, full };
       }
+      if (!best && s.length > 10) best = s;
     }
     // Fallback: last sentence
     const last = sentences[sentences.length - 1].trim();
