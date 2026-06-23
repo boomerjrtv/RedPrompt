@@ -444,7 +444,7 @@ async function sendMessage() {
       const p = div.querySelector('p');
       const scroll = () => { document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight; };
 
-      const full = await window.RP_LLM.chatStream(messages, { temperature: 0.7, maxTokens: 256 }, (delta, _full) => {
+      const full = await window.RP_LLM.chatStream(messages, { temperature: 0.7, maxTokens: 384 }, (delta, _full) => {
         // Filter <think> tags during streaming so user doesn't see raw reasoning flash
         const cleaned = _full.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<think>[\s\S]*$/gi, '');
         p.innerHTML = formatText(cleaned || '\u200b'); // zero-width space so <p> isn't empty
