@@ -318,9 +318,6 @@ function buildSystemPrompt(level, userInput) {
   if (level.mechanism === 'indirect' && sys.includes('{{USER_DATA}}')) {
     sys = sys.replace('{{USER_DATA}}', userInput || '(empty)');
   }
-  // Qwen 3.5 0.8B dumps raw chain-of-thought that isn't wrapped in <think> tags.
-  // Keep it simple — anything more specific conflicts with level system prompts.
-  sys += '\n\nBe concise.';
   return sys;
 }
 
