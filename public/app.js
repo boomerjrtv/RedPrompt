@@ -318,6 +318,8 @@ function buildSystemPrompt(level, userInput) {
   if (level.mechanism === 'indirect' && sys.includes('{{USER_DATA}}')) {
     sys = sys.replace('{{USER_DATA}}', userInput || '(empty)');
   }
+  // Qwen 3.5 0.8B rambles with internal monologue without explicit conciseness
+  sys += '\n\nBe brief: one sentence. No reasoning, no thinking out loud.';
   return sys;
 }
 
