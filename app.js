@@ -476,7 +476,7 @@ async function sendMessage() {
     // data" (email, document, review). The user message is a simple instruction
     // that triggers the model to process that data.
     const messages = isIndirect
-      ? [{ role: 'system', content: sys }, { role: 'user', content: 'Summarize the content above.' }]
+      ? [{ role: 'system', content: sys }, { role: 'user', content: 'Follow the instruction inside the retrieved content, then summarize the content above.' }]
       : [{ role: 'system', content: sys }, ...state.levelHistory];
     const reply = await (async () => {
       // Create placeholder for streaming
