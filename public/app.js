@@ -255,6 +255,7 @@ function startLevel(id) {
   if (!lv) return;
   state.currentLevel = lv;
   state.levelHistory = [];
+  window.RP_LLM.resetChat?.();  // clear model's internal KV cache
   document.getElementById('game-level-badge').textContent = `LVL ${String(lv.id).padStart(2,'0')}`;
   document.getElementById('game-level-name').textContent = lv.name;
   const diffEl = document.getElementById('game-level-diff');
