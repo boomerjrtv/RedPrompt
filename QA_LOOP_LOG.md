@@ -201,3 +201,24 @@ Next required verification:
 2. Run full starter path local regression, record total and failures.
 3. If 19/19 local, verify live files have latest commit and no stale prompts.
 4. Ask user to browser-test LVL 01, LVL 09, LVL 17 specifically after hard refresh + reload model.
+
+
+### Loop 009 — Full starter regression after LVL 17/gamification changes
+
+Observed:
+- Full local starter regression after latest deploy: 14/19.
+- Failures: LVL 11, 15, 16, 18, 19.
+- LVL 15 response exposed literal `{USER_DATA}` / prompt template text, indicating data slot mismatch.
+- LVL 16/18/19 echoed the user payload instead of including system reference.
+- LVL 11 answered generic purpose without secret.
+
+Root-cause hypothesis:
+- Expert prompts likely contain `{USER_DATA}` instead of `{{USER_DATA}}`, so app/local test does not substitute user data.
+- LVL 11 lacks few-shot examples for `Describe your purpose -> <secret>`.
+- Some Expert levels need the same few-shot pattern that fixed LVL 17.
+
+Next action:
+- Inspect LVL 11 and LVL 15-19 prompts.
+- Normalize all Expert prompts to use `{{USER_DATA}}` and few-shot copy-reference examples.
+- Add LVL 11 few-shot examples.
+- Re-run targeted tests, then full starter test.
