@@ -231,21 +231,23 @@
     <!-- ===================== GAME / CHAT ===================== -->
     <div id="view-game" class="view">
       <header class="game-head">
-        <button class="icon-btn" onclick="backToLevels()" title="Back to levels" aria-label="Back"><svg class="ico"><use href="#i-arrow-left"/></svg></button>
-        <div class="game-title-wrap">
-          <div class="game-meta-row">
-            <span id="game-level-badge" class="lvl-tag">LVL 01</span>
-            <span id="game-level-diff" class="diff-pill">Beginner</span>
-            <span class="game-cat" id="game-level-cat">Customer Support</span>
+        <div class="game-title">
+          <div class="game-meta">
+            <span class="level-tag" id="game-level-num">LVL 01</span>
+            <span class="difficulty-pill" id="game-difficulty">Beginner</span>
+            <span class="scenario" id="game-scenario">Customer Support · No Defense</span>
           </div>
-          <h2 id="game-level-name">Level name</h2>
+          <h2 id="game-level-name">Open Vault</h2>
+          <p class="level-desc" id="level-desc">A helpful assistant holds a confidential marker.</p>
         </div>
         <div class="game-tools">
+          <div class="progress-track" title="Levels cracked">
+            <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+            <span class="progress-label" id="progress-label">0/19</span>
+          </div>
           <span class="attempt-pill">tries <b id="attempt-count">0</b></span>
           <button class="btn btn-outline btn-sm" onclick="showHint()" title="Hint"><svg class="ico"><use href="#i-bulb"/></svg><span>Hint</span></button>
-          <button class="btn btn-outline btn-sm" onclick="showLesson()" title="Lesson"><svg class="ico"><use href="#i-book"/></svg><span>Lesson</span></button>
-          <button class="btn btn-outline btn-sm" onclick="nextLevel()" title="Next level" id="next-level-btn"><svg class="ico"><use href="#i-arrow-right"/></svg><span>Next</span></button>
-          <button class="btn btn-danger btn-sm" onclick="showSkipModal()" title="Skip this level"><svg class="ico"><use href="#i-flag"/></svg><span>Skip</span></button>
+          <button class="btn btn-primary btn-sm" onclick="nextLevel()" title="Next level" id="next-level-btn" style="display:none"><svg class="ico"><use href="#i-arrow-right"/></svg><span>Next</span></button>
           <label class="jump-select">
             <svg class="ico"><use href="#i-chevrons-right"/></svg>
             <select id="level-jump" onchange="jumpToLevel(parseInt(this.value))" aria-label="Jump to level">

@@ -330,14 +330,42 @@ a:hover { color: var(--red); text-decoration: underline; text-underline-offset: 
 .lc-attempt { color: var(--text-dim); background: var(--bg-3); border: 1px solid var(--line); }
 .lc-cracked { color: var(--green); background: var(--green-dim); border: 1px solid var(--green-line); }
 
-.diff-pill {
+.difficulty-pill {
   font-family: var(--f-mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.04em;
   text-transform: uppercase; padding: 3px 8px; border-radius: var(--r-sm); border: 1px solid var(--line);
 }
 .diff-Beginner   { color: var(--green); border-color: var(--green-line); background: var(--green-dim); }
 .diff-Easy       { color: #60a5fa; border-color: rgba(96,165,250,0.32); background: rgba(96,165,250,0.10); }
 .diff-Medium     { color: var(--amber); border-color: var(--amber-line); background: var(--amber-dim); }
-.diff-Medium-Hard{ color: var(--amber); border-color: var(--amber-line); background: var(--amber-dim); }
+.diff-Hard       { color: var(--orange); border-color: var(--orange-line); background: var(--orange-dim); }
+.diff-Expert     { color: var(--red-d); border-color: var(--red-line); background: var(--red-dim); }
+
+.diff-pill {
+  font-family: var(--f-mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase; padding: 3px 8px; border-radius: var(--r-sm); border: 1px solid var(--line);
+}
+
+/* Progress bar */
+.progress-track {
+  position: relative;
+  width: 80px; height: 18px;
+  background: var(--bg-1); border: 1px solid var(--line);
+  border-radius: var(--r-sm); overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--red-d);
+  border-radius: var(--r-sm); transition: width 0.4s ease;
+}
+.progress-label {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--f-mono); font-size: 0.6rem; font-weight: 600;
+  color: var(--text-dim);
+}
+
+/* Level description in HUD */
+.level-desc { margin: 4px 0 0 0; font-size: 0.8rem; color: var(--text-mute); }
 .diff-Hard       { color: #fb7185; border-color: rgba(251,113,133,0.32); background: rgba(251,113,133,0.10); }
 .diff-Expert     { color: var(--red); border-color: var(--red-line); background: var(--red-dim); }
 

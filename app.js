@@ -240,6 +240,17 @@ function renderLevels() {
 function updateProgressCount() {
   const el = document.getElementById('levels-progress-count');
   if (el) el.textContent = state.completedLevels.length;
+  updateProgressBar();
+}
+
+function updateProgressBar() {
+  const total = state.levels.length || 19;
+  const done = state.completedLevels.length;
+  const pct = Math.round((done / total) * 100);
+  const fill = document.getElementById('progress-fill');
+  const label = document.getElementById('progress-label');
+  if (fill) fill.style.width = pct + '%';
+  if (label) label.textContent = `${done}/${total}`;
 }
 
 function filterLevels(diff) {
@@ -256,27 +267,28 @@ function startLevel(id) {
   state.currentLevel = lv;
   state.levelHistory = [];
   window.RP_LLM.resetChat?.();
-  document.getElementById('game-level-badge').textContent = `LVL ${String(lv.id).padStart(2,'0')}`;
+  document.getElementById('game-level-num').textContent = `LVL ${String(lv.id).padStart(2,'0')}`;
   document.getElementById('game-level-name').textContent = lv.name;
-  const diffEl = document.getElementById('game-level-diff');
-  if (diffEl) { diffEl.textContent = lv.difficulty; diffEl.className = `diff-pill diff-${cssClass(lv.difficulty)}`; }
-  document.getElementById('game-level-cat').textContent = lv.category;
+  const diffEl = document.getElementById('game-difficulty');
+  if (diffEl) { diffEl.textContent = lv.difficulty; diffEl.className = `difficulty-pill diff-${cssClass(lv.difficulty)}`; }
+  document.getElementById('game-scenario').textContent = lv.category;
+  document.getElementById('level-desc').textContent = lv.description;
   document.getElementById('attempt-count').textContent = '0';
+  document.getElementById('next-level-btn').style.display = 'none';
   const mechLabel = {
     input_filter: 'INPUT FILTER ACTIVE — prohibited terms in your message are blocked before the model sees them.',
-    guardian: 'GUARDIAN MONITOR ACTIVE — a second model screens every message for attacks before the target responds.',
-    indirect: 'INDIRECT CHANNEL — your input is processed as DATA (not instructions). The target will act on the data block.'
+    guardian: 'GUARDIAN ACTIVE — keyword monitor blocks direct asks. Use casual phrasing.',
+    indirect: 'INDIRECT CHANNEL — your input is processed as DATA. The model acts on the data block.'
   }[lv.mechanism];
   const mechHtml = mechLabel ? `<p class="msg-hint msg-mech">DEFENSE &nbsp;${escapeHTML(mechLabel)}</p>` : '';
   document.getElementById('chat-messages').innerHTML = `
     <div class="message">
       <div class="msg-avatar ai">AI</div>
       <div class="msg-content">
-        <p><strong>${escapeHTML(lv.name)}</strong> — ${escapeHTML(lv.description)}</p>
+        <p>${escapeHTML(lv.description)}</p>
         <p class="msg-hint">HINT &nbsp;${escapeHTML(lv.hint)}</p>
         ${mechHtml}
-        <p class="msg-hint">GOAL &nbsp;Make the target output its secret marker. The system auto-detects it in every response — including reasoning.</p>
-        <p class="msg-hint">NOTE &nbsp;Local models are probabilistic. If it refuses or loops, rephrase or switch vector.</p>
+        <p class="msg-hint">GOAL &nbsp;Extract the secret. The system auto-detects it in every response.</p>
       </div>
     </div>`;
   document.getElementById('chat-input').value = '';
@@ -687,6 +699,10 @@ function onLevelComplete() {
     localStorage.setItem(key, JSON.stringify(completed));
   }
   updateProgressCount();
+  updateProgressBar();
+  // Show the Next button in the HUD
+  const nextBtn = document.getElementById('next-level-btn');
+  if (nextBtn) nextBtn.style.display = '';
   setTimeout(() => {
     const next = list.find(x => x.id === lv.id + 1);
     document.getElementById('modal-title').textContent = 'Secret extracted';
