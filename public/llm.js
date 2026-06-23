@@ -170,5 +170,5 @@ export function resetChat() {
 }
 
 // Expose to the rest of the (non-module) app.
-window.RP_LLM = { MODELS, getState, getModels, onEvent, checkWebGPU, setModel, resetChat, chat };
+window.RP_LLM = { MODELS, getState, getModels, onEvent, checkWebGPU, setModel, resetChat, chat, chatStream };
 emit({ type: "ready" });
