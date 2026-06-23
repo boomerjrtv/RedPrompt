@@ -318,8 +318,9 @@ function buildSystemPrompt(level, userInput) {
   if (level.mechanism === 'indirect' && sys.includes('{{USER_DATA}}')) {
     sys = sys.replace('{{USER_DATA}}', userInput || '(empty)');
   }
-  // Qwen 3.5 0.8B rambles with internal monologue without explicit conciseness
-  sys += '\n\nBe brief: one sentence. No reasoning, no thinking out loud.';
+  // Qwen 3.5 0.8B dumps internal monologue as visible text (not <think> tags).
+  // Tell it to suppress reasoning but let it answer at natural length.
+  sys += '\n\nReply directly. Do not explain your reasoning or think out loud.';
   return sys;
 }
 
