@@ -130,9 +130,10 @@ export async function chat(messages, opts = {}) {
   const params = {
     messages: withOptionalSystemPrompt(messages, opts),
     temperature: opts.temperature ?? 0.7,
-    max_tokens: opts.maxTokens ?? 512,
+    max_tokens: opts.maxTokens ?? 256,
     frequency_penalty: opts.frequencyPenalty ?? 0.3,
-    presence_penalty: opts.presencePenalty ?? 0.2
+    presence_penalty: opts.presencePenalty ?? 0.2,
+    enable_thinking: false
   };
   const r = await state.engine.chat.completions.create(params);
   return r.choices[0].message.content;
@@ -145,9 +146,10 @@ export async function chatStream(messages, opts = {}, onChunk) {
   const params = {
     messages: withOptionalSystemPrompt(messages, opts),
     temperature: opts.temperature ?? 0.7,
-    max_tokens: opts.maxTokens ?? 512,
+    max_tokens: opts.maxTokens ?? 256,
     frequency_penalty: opts.frequencyPenalty ?? 0,
     presence_penalty: opts.presencePenalty ?? 0,
+    enable_thinking: false,
     stream: true,
     stream_options: { include_usage: true }
   };
