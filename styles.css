@@ -669,3 +669,21 @@ a:hover { color: var(--red); text-decoration: underline; text-underline-offset: 
   .stat-divider { display: none; }
   .hero-actions .btn { width: 100%; }
 }
+
+/* ===== GAMIFICATION ===== */
+.xp-line { font-family: var(--f-mono); font-size: 1.1rem; font-weight: 700; color: var(--green); text-align: center; margin: 8px 0 4px; }
+.streak-line { font-family: var(--f-mono); font-size: 0.85rem; color: var(--orange, #fb923c); text-align: center; margin: 0 0 8px; }
+.ach-unlock { margin: 12px 0; display: flex; flex-direction: column; gap: 8px; }
+.ach-badge { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg-1); border: 1px solid var(--line); border-radius: var(--r-sm); }
+.ach-badge svg { width: 20px; height: 20px; color: var(--amber, #f59e0b); flex-shrink: 0; }
+.ach-badge strong { font-size: 0.82rem; color: var(--text); }
+.ach-badge span { font-size: 0.72rem; color: var(--text-mute); }
+.ach-badge div { display: flex; flex-direction: column; }
+
+/* Streak fire animation on attempt count */
+@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+.attempt-pill b { transition: color 0.3s; }
+
+/* Level cards - locked styling */
+.level-card.locked { opacity: 0.5; pointer-events: none; }
+.level-card.completed .lc-num { color: var(--green); }

@@ -11,7 +11,28 @@ let state = {
   techniques: [],
   currentLevel: null,
   levelHistory: [],
-  completedLevels: JSON.parse(localStorage.getItem('rp_completed') || '[]')
+  completedLevels: JSON.parse(localStorage.getItem('rp_completed') || '[]'),
+  // Gamification
+  xp: parseInt(localStorage.getItem('rp_xp') || '0'),
+  streak: 0,
+  bestStreak: parseInt(localStorage.getItem('rp_best_streak') || '0'),
+  achievements: JSON.parse(localStorage.getItem('rp_achievements') || '[]'),
+  levelStartTime: null,
+  totalAttempts: parseInt(localStorage.getItem('rp_attempts') || '0')
+};
+
+const ACHIEVEMENTS = {
+  first_blood: { name: 'First Blood', desc: 'Crack your first level', icon: '#i-check-circle' },
+  speed_demon: { name: 'Speed Demon', desc: 'Crack a level in under 10 seconds', icon: '#i-zap' },
+  persistent: { name: 'Persistent', desc: 'Crack a level after 5+ tries', icon: '#i-flag' },
+  streak_3: { name: 'On Fire', desc: '3 levels cracked in a row', icon: '#i-flame' },
+  streak_5: { name: 'Unstoppable', desc: '5 levels cracked in a row', icon: '#i-flame' },
+  streak_10: { name: 'Machine', desc: '10 levels cracked in a row', icon: '#i-trophy' },
+  half_done: { name: 'Halfway There', desc: 'Crack 10 levels', icon: '#i-shield' },
+  all_done: { name: 'Red Team Certified', desc: 'Crack all 19 levels', icon: '#i-trophy' },
+  filter_bypass: { name: 'Filter Bypass', desc: 'Beat an input filter level', icon: '#i-shield' },
+  guardian_bypass: { name: 'Guardian Bypass', desc: 'Beat a guardian level', icon: '#i-shield' },
+  indirect_master: { name: 'Indirect Master', desc: 'Beat an indirect injection level', icon: '#i-key' },
 };
 
 // ---- Data loading --------------------------------------------------------
@@ -266,6 +287,7 @@ function startLevel(id) {
   if (!lv) return;
   state.currentLevel = lv;
   state.levelHistory = [];
+  state.levelStartTime = Date.now();
   window.RP_LLM.resetChat?.();
   document.getElementById('game-level-num').textContent = `LVL ${String(lv.id).padStart(2,'0')}`;
   document.getElementById('game-level-name').textContent = lv.name;
@@ -487,6 +509,8 @@ async function sendMessage() {
       onLevelComplete();
     } else {
       addChatMessage(displayText, 'assistant', displayThink);
+      state.totalAttempts++;
+      localStorage.setItem('rp_attempts', String(state.totalAttempts));
       if (attempts === 5) setTimeout(showStuckHint, 400);
     }
   } catch (e) {
@@ -693,34 +717,114 @@ function onLevelComplete() {
   const completed = state.completedLevels;
   const list = state.levels;
   const key = 'rp_completed';
+  const isNewCrack = !completed.includes(lv.id);
 
-  if (!completed.includes(lv.id)) {
+  if (isNewCrack) {
     completed.push(lv.id);
     localStorage.setItem(key, JSON.stringify(completed));
   }
-  updateProgressCount();
-  updateProgressBar();
-  // Show the Next button in the HUD
-  const nextBtn = document.getElementById('next-level-btn');
-  if (nextBtn) nextBtn.style.display = '';
-  setTimeout(() => {
-    const next = list.find(x => x.id === lv.id + 1);
-    document.getElementById('modal-title').textContent = 'Secret extracted';
-    document.getElementById('modal-body').innerHTML = `
-      <p style="color:var(--text-dim);">Target <strong>${escapeHTML(lv.name)}</strong> compromised. The secret marker leaked in the response.</p>
-      <div class="solution-box">
-        <strong>Secret marker</strong>
-        <code>${escapeHTML(lv.secret)}</code>
-      </div>
-      <p style="font-size:0.82rem;color:var(--text-mute);font-family:var(--f-mono);">category: ${escapeHTML(lv.category)} · defense: ${escapeHTML(lv.defenseType || 'none')}</p>
-      <p style="text-align:center;margin-top:18px;">
-        ${next
-          ? `<button class="btn btn-primary" onclick="closeModal();startLevel(${Number(next.id)})"><span>Next target</span><svg class=\"ico\"><use href=\"#i-arrow-right\"/></svg></button>`
-          : '<strong style="color:var(--green);">Lab complete.</strong>'}
-      </p>
-      <p style="text-align:center;color:var(--text-mute);font-family:var(--f-mono);font-size:0.76rem;margin-top:10px;">progress ${completed.length}/${list.length}</p>`;
-    document.getElementById('modal-overlay').classList.remove('hidden');
-  }, 400);
+
+  // Gamification: XP, streak, achievements
+  const attempts = parseInt(document.getElementById('attempt-count').textContent, 10) || 1;
+  const elapsed = state.levelStartTime ? Math.round((Date.now() - state.levelStartTime) / 1000) : 0;
+
+  if (isNewCrack) {
+    // XP: base per difficulty + speed bonus + first-try bonus
+    const xpTable = { 'Beginner': 10, 'Easy': 20, 'Medium': 40, 'Hard': 60, 'Expert': 100 };
+    const baseXP = xpTable[lv.difficulty] || 30;
+    const speedBonus = elapsed < 10 ? 15 : elapsed < 30 ? 5 : 0;
+    const firstTryBonus = attempts === 1 ? 20 : 0;
+    const gainedXP = baseXP + speedBonus + firstTryBonus;
+    state.xp += gainedXP;
+    localStorage.setItem('rp_xp', String(state.xp));
+
+    // Streak
+    state.streak++;
+    if (state.streak > state.bestStreak) {
+      state.bestStreak = state.streak;
+      localStorage.setItem('rp_best_streak', String(state.bestStreak));
+    }
+
+    // Check achievements
+    const newAchievements = [];
+    const checkAndAdd = (id, condition) => {
+      if (condition && !state.achievements.includes(id)) {
+        state.achievements.push(id);
+        newAchievements.push(id);
+      }
+    };
+    checkAndAdd('first_blood', completed.length === 1);
+    checkAndAdd('speed_demon', elapsed < 10);
+    checkAndAdd('persistent', attempts >= 5);
+    checkAndAdd('streak_3', state.streak >= 3);
+    checkAndAdd('streak_5', state.streak >= 5);
+    checkAndAdd('streak_10', state.streak >= 10);
+    checkAndAdd('half_done', completed.length >= 10);
+    checkAndAdd('all_done', completed.length >= list.length);
+    checkAndAdd('filter_bypass', lv.mechanism === 'input_filter');
+    checkAndAdd('guardian_bypass', lv.mechanism === 'guardian');
+    checkAndAdd('indirect_master', lv.mechanism === 'indirect');
+    if (newAchievements.length) {
+      localStorage.setItem('rp_achievements', JSON.stringify(state.achievements));
+    }
+
+    // Build celebration modal
+    const achHTML = newAchievements.length
+      ? `<div class="ach-unlock">${newAchievements.map(id => {
+          const a = ACHIEVEMENTS[id];
+          return `<div class="ach-badge"><svg class="ico"><use href="${a.icon}"/></svg><div><strong>${a.name}</strong><br><span>${a.desc}</span></div></div>`;
+        }).join('')}</div>`
+      : '';
+    const xpLine = `<div class="xp-line">+${gainedXP} XP${speedBonus ? ' (speed bonus!)' : ''}${firstTryBonus ? ' (first try!)' : ''}</div>`;
+    const streakLine = state.streak >= 2 ? `<div class="streak-line">${state.streak} in a row</div>` : '';
+
+    updateProgressCount();
+    updateProgressBar();
+    // Show the Next button in the HUD
+    const nextBtn = document.getElementById('next-level-btn');
+    if (nextBtn) nextBtn.style.display = '';
+    setTimeout(() => {
+      const next = list.find(x => x.id === lv.id + 1);
+      document.getElementById('modal-title').textContent = 'Secret extracted';
+      document.getElementById('modal-body').innerHTML = `
+        ${xpLine}
+        ${streakLine}
+        <p style="color:var(--text-dim);">Target <strong>${escapeHTML(lv.name)}</strong> compromised in ${attempts} ${attempts === 1 ? 'try' : 'tries'} (${elapsed}s).</p>
+        <div class="solution-box">
+          <strong>Secret marker</strong>
+          <code>${escapeHTML(lv.secret)}</code>
+        </div>
+        ${achHTML}
+        <p style="text-align:center;margin-top:18px;">
+          ${next
+            ? `<button class="btn btn-primary" onclick="closeModal();startLevel(${Number(next.id)})"><span>Next target</span><svg class="ico"><use href="#i-arrow-right"/></svg></button>`
+            : '<strong style="color:var(--green);">Lab complete.</strong>'}
+        </p>
+        <p style="text-align:center;color:var(--text-mute);font-family:var(--f-mono);font-size:0.76rem;margin-top:10px;">progress ${completed.length}/${list.length} · total XP: ${state.xp}</p>`;
+      document.getElementById('modal-overlay').classList.remove('hidden');
+    }, 400);
+  } else {
+    // Already completed, just show simple modal
+    updateProgressBar();
+    const nextBtn = document.getElementById('next-level-btn');
+    if (nextBtn) nextBtn.style.display = '';
+    setTimeout(() => {
+      const next = list.find(x => x.id === lv.id + 1);
+      document.getElementById('modal-title').textContent = 'Secret extracted';
+      document.getElementById('modal-body').innerHTML = `
+        <p style="color:var(--text-dim);">Target <strong>${escapeHTML(lv.name)}</strong> already compromised.</p>
+        <div class="solution-box">
+          <strong>Secret marker</strong>
+          <code>${escapeHTML(lv.secret)}</code>
+        </div>
+        <p style="text-align:center;margin-top:18px;">
+          ${next
+            ? `<button class="btn btn-primary" onclick="closeModal();startLevel(${Number(next.id)})"><span>Next target</span><svg class="ico"><use href="#i-arrow-right"/></svg></button>`
+            : '<strong style="color:var(--green);">Lab complete.</strong>'}
+        </p>`;
+      document.getElementById('modal-overlay').classList.remove('hidden');
+    }, 400);
+  }
 }
 
 function backToLevels() { state.currentLevel = null; showView('levels'); }
