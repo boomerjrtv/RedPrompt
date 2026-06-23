@@ -792,7 +792,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     b.addEventListener('click', () => filterLevels(b.dataset.filter));
   });
 
-  bootModel();
+  if (window.RP_LLM) bootModel();
+  else window.addEventListener('load', bootModel);
 
   const ci = document.getElementById('chat-input');
   ci.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
