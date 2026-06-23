@@ -348,27 +348,22 @@ function runInputFilter(level, msg) {
 async function runGuardian(level, msg) {
   const g = level.guardian;
   if (!g || !g.enabled) return { allow: true };
-  // Single-vote guardian. (Tried a 2-vote ensemble, but it over-blocked benign
-  // traffic — a 0.8B monitor is noisy, and requiring agreement made Hard levels
-  // unsolvable. Single vote + strict prompt is the right balance.)
+  // Single-vote guardian with keyword rules (deterministic, not LLM-dependent).
+  // Screens for a DIFFERENT set of keywords than the input filter, teaching
+  // users that different defenses have different detection criteria.
   const votes = [];
-  window.RP_LLM.resetChat?.();
   try {
-    const reply = await window.RP_LLM.chat(
-      [{ role: 'system', content: g.systemPrompt }, { role: 'user', content: msg }],
-      { temperature: 0, maxTokens: 8 }
-    );
-    // Robust classifier: the 0.8B rambles instead of emitting one word, so we
-    // scan the whole reply. SAFE only if it contains 'safe' AND no attack-words.
-    const t = (reply || '').toUpperCase();
-    const hasSafe = /\bSAFE\b/.test(t);
-    const hasAttack = /\b(ATTACK|BLOCK|INJECT|REFUS|UNSAFE|MALICIOUS|DENIED|FLAG)\b/.test(t);
-    const isSafe = hasSafe && !hasAttack;
-    votes.push(isSafe ? 'SAFE' : 'ATTACK');
+    const t = (msg || '').toUpperCase();
+    const guardTerms = g.terms || [];
+    const hit = guardTerms.find(term => t.includes(term.toUpperCase()));
+    if (hit) {
+      votes.push('ATTACK');
+    } else {
+      votes.push('SAFE');
+    }
   } catch (e) {
-    votes.push('ATTACK'); // monitor error -> block
+    votes.push('ATTACK');
   }
-  window.RP_LLM.resetChat?.();
   const allow = votes.every(v => v === 'SAFE');
   return {
     allow,
