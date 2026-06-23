@@ -255,7 +255,6 @@ function startLevel(id) {
   if (!lv) return;
   state.currentLevel = lv;
   state.levelHistory = [];
-  window.RP_LLM.resetChat?.();  // clear model's internal KV cache
   document.getElementById('game-level-badge').textContent = `LVL ${String(lv.id).padStart(2,'0')}`;
   document.getElementById('game-level-name').textContent = lv.name;
   const diffEl = document.getElementById('game-level-diff');
@@ -433,7 +432,7 @@ async function sendMessage() {
       ? [{ role: 'system', content: sys }, { role: 'user', content: 'Process the data above.' }]
       : [{ role: 'system', content: sys }, ...state.levelHistory];
     const reply = await (async () => {
-      // Create a placeholder message div for streaming
+      // Create placeholder for streaming
       const c = document.getElementById('chat-messages');
       const div = document.createElement('div');
       div.className = 'message';
@@ -441,41 +440,28 @@ async function sendMessage() {
       c.appendChild(div);
       const p = div.querySelector('p');
       const scroll = () => { document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight; };
-
-      // DEBUG
-      console.log('DEBUG messages:', JSON.stringify(messages.map(m => ({role:m.role, len:m.content.length, start:m.content.slice(0,80)}))));
-
       const full = await window.RP_LLM.chatStream(messages, { temperature: 0.7, maxTokens: 512 }, (delta, _full) => {
-        // Filter <think> tags during streaming so user doesn't see raw reasoning flash
-        const cleaned = _full.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<think>[\s\S]*$/gi, '');
-        p.innerHTML = formatText(cleaned || '\u200b'); // zero-width space so <p> isn't empty
+        p.innerHTML = formatText(_full);
         scroll();
       });
-
-      // Strip the placeholder — finalize below
       div.remove();
       return full;
     })();
-
     if (!isIndirect) state.levelHistory.push({ role: 'assistant', content: reply });
 
     const attempts = (parseInt(document.getElementById('attempt-count').textContent, 10) || 0) + 1;
     document.getElementById('attempt-count').textContent = attempts;
 
     // Reasoning models leak secrets inside <think> too — detect on the FULL output.
-    // Pass the user's own message so encoded-form hits the user already supplied
-    // (e.g. the base64 we handed them in a payload) don't false-positive.
     const revealed = checkSecretRevealed(reply, state.currentLevel.secret, state.currentLevel.defenseType, msg);
     const { think, answer } = splitThink(reply);
-    // When the model only reasoned and never answered, show the reasoning
-    // inline so the user sees what happened instead of a dead placeholder.
     let displayText, displayThink;
     if (answer) {
       displayText = answer;
       displayThink = think;
     } else if (think) {
-      displayText = think;  // show reasoning directly, not hidden
-      displayThink = null;  // already shown
+      displayText = think;
+      displayThink = null;
     } else {
       displayText = reply;
       displayThink = null;
@@ -513,35 +499,6 @@ function splitThink(raw) {
   const openIdx = full.search(/<think>/i);
   if (openIdx !== -1) {
     return { think: full.slice(openIdx + 7).trim(), answer: '', full };
-  }
-  // Qwen 3.5 0.8B often ignores the conciseness directive and dumps raw reasoning.
-  // Detect rambling (self-correction loops) and extract the last plausible answer.
-  const rambleMarkers = /(?:^|\n)(Actually|Wait,? actually|I think|Let me|Hmm,?|OK,? let me|I need to|I should|But actually|No,? that|No wait|Okay,? I can|I cannot|I can only|I am not sure|I should also)\b/gmi;
-  const markerCount = (full.match(rambleMarkers) || []).length;
-
-  // Also detect exact phrase repetition (looping)
-  const sentences = full.split(/(?<=[.!?])\s+/);
-  const phraseCounts = {};
-  for (const s of sentences) {
-    const clean = s.trim();
-    if (clean.length > 15) phraseCounts[clean] = (phraseCounts[clean] || 0) + 1;
-  }
-  const maxRepeat = Math.max(0, ...Object.values(phraseCounts));
-
-  if ((markerCount >= 3 || maxRepeat >= 4) && full.length > 200) {
-    // Heavy rambling or looping — try to find the final answer after the last self-correction
-    // Walk backwards to find a sentence that doesn't look like reasoning
-    let best = '';
-    for (let i = sentences.length - 1; i >= 0; i--) {
-      const s = sentences[i].trim();
-      if (!s.match(/^(Actually|Wait|I think|Hmm|Let me|OK|But|No|I need|I should|Surely|So I|Okay|I can|I cannot|I am|I should)\b/i) && s.length > 10) {
-        return { think: full.trim(), answer: s, full };
-      }
-      if (!best && s.length > 10) best = s;
-    }
-    // Fallback: last sentence
-    const last = sentences[sentences.length - 1].trim();
-    if (last) return { think: full.trim(), answer: last, full };
   }
   return { think: '', answer: full.trim(), full };
 }

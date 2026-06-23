@@ -122,6 +122,10 @@ function withOptionalSystemPrompt(messages, opts = {}) {
 
 export async function chat(messages, opts = {}) {
   if (!state.engine) throw new Error("Model not loaded. Click 'Load model' first.");
+  // Qwen 3.5 is a reasoning model: it emits <think>...</think> blocks.
+  // Keep penalties LOW — high frequency_penalty on a small model destroys
+  // coherence and produces gibberish over long generations. Cap tokens so
+  // reasoning can't spiral, and nudge it to be concise.
   const params = {
     messages: withOptionalSystemPrompt(messages, opts),
     temperature: opts.temperature ?? 0.7,
