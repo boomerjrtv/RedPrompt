@@ -77,9 +77,9 @@
           <button class="nav-btn nav-btn-report" onclick="downloadReport()" title="Export pentest report"><svg class="ico"><use href="#i-file"/></svg><span>Report</span></button>
         </div>
         <div class="nav-meta">
-          <div class="model-pod" title="Qwen 3.5 0.8B runs locally via WebGPU">
+          <div class="model-pod" title="Llama 3.2 1B runs locally via WebGPU">
             <span id="model-status-dot" class="status-dot status-idle"></span>
-            <span id="nav-model-name" class="model-name">Qwen 3.5 0.8B · 0.6GB</span>
+            <span id="nav-model-name" class="model-name">Llama 3.2 1B · ~0.9 GB</span>
             <button id="nav-model-load" class="btn btn-ghost btn-xs" onclick="loadSelectedModel('nav')">Load</button>
           </div>
           <span id="model-status-label" class="status-label">no model</span>
@@ -280,7 +280,7 @@
           <div class="boot-model-row">
             <svg class="ico boot-cpu"><use href="#i-cpu"/></svg>
             <div>
-              <div id="boot-model-name" class="boot-model-name">Qwen 3.5 0.8B · 0.6 GB</div>
+              <div id="boot-model-name" class="boot-model-name">Llama 3.2 1B · ~0.9 GB</div>
               <p id="boot-model-help" class="boot-model-help">Single local model for the full lab. Small one-time download, cached after first run.</p>
             </div>
           </div>
@@ -293,7 +293,7 @@
           <ul class="boot-reqs" id="boot-reqs">
             <li><b>WebGPU browser</b> — Chrome / Edge 113+, Brave 1.52+, Firefox 141+, or Safari 18+. Mobile Chrome and Safari 18+ qualify.</li>
             <li><b>~2 GB free RAM</b> while generating (peaks ~1.6 GB). Modern laptops and high-end phones handle it.</li>
-            <li><b>~0.6 GB download</b> on first run, then cached. Wi-Fi recommended.</li>
+            <li><b>~0.9 GB download</b> on first run, then cached. Wi-Fi recommended.</li>
             <li><b>Hardware acceleration on</b> in browser settings — usually enabled by default.</li>
           </ul>
         </div>
