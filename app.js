@@ -356,7 +356,7 @@ async function runGuardian(level, msg) {
   try {
     const reply = await window.RP_LLM.chat(
       [{ role: 'system', content: g.systemPrompt }, { role: 'user', content: msg }],
-      { temperature: 0.3, maxTokens: 30 }
+      { temperature: 0, maxTokens: 8 }
     );
     // Robust classifier: the 0.8B rambles instead of emitting one word, so we
     // scan the whole reply. SAFE only if it contains 'safe' AND no attack-words.
@@ -441,7 +441,7 @@ async function sendMessage() {
       c.appendChild(div);
       const p = div.querySelector('p');
       const scroll = () => { document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight; };
-      const full = await window.RP_LLM.chatStream(messages, { temperature: 0.7, maxTokens: 512 }, (delta, _full) => {
+      const full = await window.RP_LLM.chatStream(messages, { temperature: 0.2, maxTokens: 96 }, (delta, _full) => {
         p.innerHTML = formatText(_full);
         scroll();
       });
@@ -455,6 +455,7 @@ async function sendMessage() {
 
     // Reasoning models leak secrets inside <think> too — detect on the FULL output.
     const revealed = checkSecretRevealed(reply, state.currentLevel.secret, state.currentLevel.defenseType, msg);
+    const garbage = looksLikeModelGarbage(reply);
     const { think, answer } = splitThink(reply);
     let displayText, displayThink;
     if (answer) {
@@ -468,7 +469,9 @@ async function sendMessage() {
       displayThink = null;
     }
 
-    if (revealed) {
+    if (garbage && !revealed) {
+      addChatMessage('Model output became unstable. Try rephrasing the payload or reload the model.', 'system');
+    } else if (revealed) {
       addChatMessage(displayText, 'assistant reveal-msg', revealed && displayThink ? displayThink : null);
       onLevelComplete();
     } else {
@@ -482,6 +485,17 @@ async function sendMessage() {
 }
 function addAttackBadges(names) {
   document.getElementById('attack-detector').innerHTML = names.map(n => `<span class="attack-tag"><svg class="ico"><use href="#i-alert"/></svg> ${escapeHTML(n)}</span>`).join('');
+}
+
+function looksLikeModelGarbage(text) {
+  const s = (text || '').trim();
+  if (s.length < 120) return false;
+  const words = s.split(/\s+/).filter(Boolean);
+  if (words.length < 25) return false;
+  const veryLong = words.filter(w => w.length > 18).length;
+  const weird = words.filter(w => /[{}\[\]<>|`_^~\\]/.test(w) || /[A-Z][a-z]+[A-Z][a-z]+/.test(w)).length;
+  const noSentence = !/[.!?]\s/.test(s.slice(0, 400));
+  return (veryLong + weird) / words.length > 0.18 || (noSentence && words.length > 80);
 }
 
 function splitThink(raw) {

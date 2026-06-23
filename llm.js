@@ -126,10 +126,10 @@ export async function chat(messages, opts = {}) {
   // reasoning can't spiral, and nudge it to be concise.
   const params = {
     messages: withOptionalSystemPrompt(messages, opts),
-    temperature: opts.temperature ?? 0.7,
-    max_tokens: opts.maxTokens ?? 256,
-    frequency_penalty: opts.frequencyPenalty ?? 0.3,
-    presence_penalty: opts.presencePenalty ?? 0.2,
+    temperature: opts.temperature ?? 0.2,
+    max_tokens: opts.maxTokens ?? 96,
+    frequency_penalty: opts.frequencyPenalty ?? 0,
+    presence_penalty: opts.presencePenalty ?? 0,
     enable_thinking: false
   };
   const r = await state.engine.chat.completions.create(params);
@@ -142,8 +142,8 @@ export async function chatStream(messages, opts = {}, onChunk) {
   if (!state.engine) throw new Error("Model not loaded. Click 'Load model' first.");
   const params = {
     messages: withOptionalSystemPrompt(messages, opts),
-    temperature: opts.temperature ?? 0.7,
-    max_tokens: opts.maxTokens ?? 256,
+    temperature: opts.temperature ?? 0.2,
+    max_tokens: opts.maxTokens ?? 96,
     frequency_penalty: opts.frequencyPenalty ?? 0,
     presence_penalty: opts.presencePenalty ?? 0,
     enable_thinking: false,
