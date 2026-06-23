@@ -137,6 +137,31 @@ export async function chat(messages, opts = {}) {
   return r.choices[0].message.content;
 }
 
+// Streaming version — calls onChunk(delta) as tokens arrive.
+// Returns the full response text on completion.
+export async function chatStream(messages, opts = {}, onChunk) {
+  if (!state.engine) throw new Error("Model not loaded. Click 'Load model' first.");
+  const params = {
+    messages: withOptionalSystemPrompt(messages, opts),
+    temperature: opts.temperature ?? 0.7,
+    max_tokens: opts.maxTokens ?? 512,
+    frequency_penalty: opts.frequencyPenalty ?? 0,
+    presence_penalty: opts.presencePenalty ?? 0,
+    stream: true,
+    stream_options: { include_usage: true }
+  };
+  const asyncChunks = await state.engine.chat.completions.create(params);
+  let full = '';
+  for await (const chunk of asyncChunks) {
+    const delta = chunk.choices?.[0]?.delta?.content || '';
+    if (delta) {
+      full += delta;
+      onChunk(delta, full);
+    }
+  }
+  return full;
+}
+
 // Reset internal conversation state — used by the dev test suite so each
 // payload runs from a clean slate instead of inheriting prior turns.
 export function resetChat() {

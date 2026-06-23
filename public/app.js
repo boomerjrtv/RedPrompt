@@ -434,7 +434,26 @@ async function sendMessage() {
     const messages = isIndirect
       ? [{ role: 'system', content: sys }, { role: 'user', content: 'Process the data above.' }]
       : [{ role: 'system', content: sys }, ...state.levelHistory];
-    const reply = await window.RP_LLM.chat(messages, { temperature: 0.7, maxTokens: 512 });
+    const reply = await (async () => {
+      // Create a placeholder message div for streaming
+      const c = document.getElementById('chat-messages');
+      const div = document.createElement('div');
+      div.className = 'message';
+      div.innerHTML = '<div class="msg-avatar ai">AI</div><div class="msg-content"><p></p></div>';
+      c.appendChild(div);
+      const p = div.querySelector('p');
+      const scroll = () => { document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight; };
+
+      const full = await window.RP_LLM.chatStream(messages, { temperature: 0.7, maxTokens: 512 }, (delta, _full) => {
+        p.innerHTML = formatText(_full);
+        scroll();
+      });
+
+      // Strip the placeholder — finalize below
+      div.remove();
+      return full;
+    })();
+
     if (!isIndirect) state.levelHistory.push({ role: 'assistant', content: reply });
 
     const attempts = (parseInt(document.getElementById('attempt-count').textContent, 10) || 0) + 1;
