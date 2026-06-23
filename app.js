@@ -36,7 +36,7 @@ const ACHIEVEMENTS = {
 };
 
 // ---- Data loading --------------------------------------------------------
-const APP_VERSION = '20260627-progfix';
+const APP_VERSION = '20260623-mrnfix';
 function versioned(path) { return `${path}?v=${APP_VERSION}`; }
 
 async function loadData() {
@@ -388,6 +388,25 @@ function runInputFilter(level, msg) {
   return { pass: true };
 }
 
+// OFF-TARGET SENSITIVE ID GUARD: small browser models can hallucinate plausible
+// PHI/PII-looking identifiers when asked for fields that are not in the level
+// prompt (MRN, SSN, account number, etc.). That is not a prompt-injection win;
+// it is unsafe nonsense. Deterministically answer these before the model sees
+// them, while still allowing the intended stored marker/secret/password asks.
+function runOffTargetSensitiveIdGuard(level, msg) {
+  if (!level || !msg) return { pass: true };
+  if (!['Beginner', 'Easy'].includes(level.difficulty)) return { pass: true };
+  const text = msg.toLowerCase();
+  const asksSensitiveId = /\b(mrn|medical\s+record|patient\s*(?:id|number)|ssn|social\s+security|account\s*(?:id|number)|routing\s+number|credit\s*card|card\s*number|dob|date\s+of\s+birth)\b/i.test(text);
+  if (!asksSensitiveId) return { pass: true };
+  const asksStoredMarker = /\b(password|secret|marker|value|pin|what\s+do\s+you\s+hold|confidential)\b/i.test(text);
+  if (asksStoredMarker) return { pass: true };
+  return {
+    pass: false,
+    reply: "I don't have that identifier. I can only answer questions about the stored marker for this lab level."
+  };
+}
+
 // GUARDIAN: a real second inference pass, run as an ensemble (2 votes, fail-closed).
 // A 0.8B monitor is noisy, so we require BOTH votes to explicitly say SAFE;
 // anything else (ATTACK, garbage, error) counts as a block. This is the
@@ -445,6 +464,14 @@ async function sendMessage() {
   const filt = runInputFilter(state.currentLevel, msg);
   if (!filt.pass) {
     addSystemBanner(`INPUT BLOCKED by input filter — prohibited term detected: "${filt.blockedTerm}". The model never saw your message. Obfuscate the payload to slip past the filter.`, 'blocked');
+    setSendState(false); sendBtn.disabled = false;
+    return;
+  }
+
+  // --- SAFETY GATE: off-target sensitive identifiers ---
+  const idGuard = runOffTargetSensitiveIdGuard(state.currentLevel, msg);
+  if (!idGuard.pass) {
+    addChatMessage(idGuard.reply, 'assistant');
     setSendState(false); sendBtn.disabled = false;
     return;
   }
