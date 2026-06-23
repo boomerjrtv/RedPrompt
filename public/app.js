@@ -442,6 +442,9 @@ async function sendMessage() {
       const p = div.querySelector('p');
       const scroll = () => { document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight; };
 
+      // DEBUG
+      console.log('DEBUG messages:', JSON.stringify(messages.map(m => ({role:m.role, len:m.content.length, start:m.content.slice(0,80)}))));
+
       const full = await window.RP_LLM.chatStream(messages, { temperature: 0.7, maxTokens: 512 }, (delta, _full) => {
         // Filter <think> tags during streaming so user doesn't see raw reasoning flash
         const cleaned = _full.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<think>[\s\S]*$/gi, '');
