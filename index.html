@@ -100,21 +100,18 @@
         <div class="hero-inner">
           <p class="eyebrow"><span class="eyebrow-dot"></span>RED_TEAM_OPS // BROWSER-NATIVE</p>
           <h1 class="hero-title">Break AI<br/><span class="hl">before it ships.</span></h1>
-          <p class="hero-sub">A prompt-injection lab against realistic enterprise AI. Extract secrets, defeat layered defenses, and write a real pentest report — all running 100% in your browser. No API keys. No server. Nothing leaves the machine.</p>
+          <p class="hero-sub">Extract secrets. Bypass defenses. Break AI before it ships.</p>
           <div class="hero-actions">
             <button class="btn btn-primary btn-lg" onclick="showView('levels')">
               <span>Enter the lab</span><svg class="ico"><use href="#i-arrow-right"/></svg>
             </button>
-            <button class="btn btn-outline btn-lg" onclick="showView('learn')">
-              <svg class="ico"><use href="#i-book"/></svg><span>Read the brief</span>
-            </button>
           </div>
           <div class="stat-strip">
-            <div class="stat"><span class="stat-n">19</span><span class="stat-l">levels &amp; case studies</span></div>
+            <div class="stat"><span class="stat-n">19</span><span class="stat-l">levels</span></div>
             <div class="stat-divider"></div>
-            <div class="stat"><span class="stat-n">20</span><span class="stat-l">attack techniques</span></div>
+            <div class="stat"><span class="stat-n">3</span><span class="stat-l">attack classes</span></div>
             <div class="stat-divider"></div>
-            <div class="stat"><span class="stat-n">0</span><span class="stat-l">keys, servers, or trackers</span></div>
+            <div class="stat"><span class="stat-n">0</span><span class="stat-l">API keys needed</span></div>
           </div>
         </div>
       </section>
@@ -244,6 +241,10 @@
           <p class="level-desc" id="level-desc">A helpful assistant holds a confidential marker.</p>
         </div>
         <div class="game-tools">
+          <div class="hud-stats">
+            <span class="hud-xp" id="hud-xp">0 XP</span>
+            <span class="hud-streak" id="hud-streak" style="display:none"></span>
+          </div>
           <div class="progress-track" title="Levels cracked">
             <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
             <span class="progress-label" id="progress-label">0/19</span>

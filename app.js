@@ -272,6 +272,19 @@ function updateProgressBar() {
   const label = document.getElementById('progress-label');
   if (fill) fill.style.width = pct + '%';
   if (label) label.textContent = `${done}/${total}`;
+  // Update XP display
+  const xpEl = document.getElementById('hud-xp');
+  if (xpEl) xpEl.textContent = `${state.xp} XP`;
+  // Update streak display
+  const streakEl = document.getElementById('hud-streak');
+  if (streakEl) {
+    if (state.streak >= 2) {
+      streakEl.textContent = `${state.streak} streak`;
+      streakEl.style.display = '';
+    } else {
+      streakEl.style.display = 'none';
+    }
+  }
 }
 
 function filterLevels(diff) {
