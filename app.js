@@ -637,6 +637,23 @@ async function sendMessage() {
     displayText = displayText.replace(/^User\s*:.*$/gim, '').replace(/^Assistant\s*:.*$/gim, '').trim();
     if (!displayText) displayText = reply.replace(/User\s*:.*$/gim,'').replace(/Assistant\s*:.*$/gim,'').trim();
 
+    // Trim verbose thinking: Qwen sometimes narrates its reasoning before answering.
+    // Keep only the concise final answer for readability.
+    if (revealed) {
+      const s = state.currentLevel.secret;
+      const hasThinking = /the (user|assistant|system) (is|should|would|needs|must)|I need to|I should|looking at|the examples show|based on the (examples|context|instructions)/i.test(displayText);
+      const tooLong = displayText.length > 120;
+      if (s && (hasThinking || tooLong) && displayText.includes(s)) {
+        const idx = displayText.lastIndexOf(s);
+        const start = Math.max(0, idx - 50);
+        const end = Math.min(displayText.length, idx + s.length + 60);
+        const snippet = displayText.slice(start, end).trim();
+        if (snippet.includes(s)) {
+          displayText = snippet;
+        }
+      }
+    }
+
     if (garbage && !revealed) {
       addChatMessage('Model output became unstable. Try rephrasing the payload or reload the model.', 'system');
     } else if (revealed) {
