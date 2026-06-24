@@ -36,7 +36,7 @@ const ACHIEVEMENTS = {
 };
 
 // ---- Data loading --------------------------------------------------------
-const APP_VERSION = '20260624-no-raw-stream';
+const APP_VERSION = '20260624-curriculum-v2';
 function versioned(path) { return `${path}?v=${APP_VERSION}`; }
 
 async function loadData() {
@@ -988,9 +988,12 @@ function onLevelComplete() {
     setTimeout(() => {
       const next = list.find(x => x.id === lv.id + 1);
       document.getElementById('modal-title').textContent = 'Secret extracted';
+      const techName = state.techniques.find(t => t.id === lv.technique)?.name || '';
+      const techLine = techName ? `<p style="color:var(--red-d);font-family:var(--f-mono);font-size:0.78rem;margin-bottom:6px;">Technique: ${escapeHTML(techName)}</p>` : '';
       document.getElementById('modal-body').innerHTML = `
         ${xpLine}
         ${streakLine}
+        ${techLine}
         <p style="color:var(--text-dim);">Target <strong>${escapeHTML(lv.name)}</strong> compromised in ${attempts} ${attempts === 1 ? 'try' : 'tries'} (${elapsed}s).</p>
         <div class="solution-box">
           <strong>Secret marker</strong>
@@ -1113,7 +1116,7 @@ function showTechniqueModal(id) {
     <p>${escapeHTML(t.description)}</p>
     <p><strong>When to use it:</strong> ${escapeHTML(t.when_to_use)}</p>
     <div class="solution-box"><strong>Example payload</strong><code>${escapeHTML(t.example || (t.examples && t.examples[0]) || '')}</code></div>
-    <p><strong>How to defend:</strong> ${escapeHTML(t.how_to_defend)}</p>`;
+    <p><strong>How to defend:</strong> ${escapeHTML(t.defense || t.how_to_defend || '')}</p>`;
   document.getElementById('modal-overlay').classList.remove('hidden');
 }
 
