@@ -629,6 +629,21 @@ a:hover { color: var(--red); text-decoration: underline; text-underline-offset: 
   background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 7px 10px;
   display: block; white-space: pre-wrap; word-break: break-word;
 }
+.debrief-box {
+  margin: 14px 0; padding: 13px; border: 1px solid color-mix(in srgb, var(--red) 35%, var(--line));
+  border-radius: var(--r); background: linear-gradient(135deg, rgba(239,68,68,0.10), rgba(20,184,166,0.05));
+}
+.debrief-top { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+.debrief-label { font-family:var(--f-mono); font-size:0.72rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.08em; }
+.risk-pill { font-family:var(--f-mono); font-size:0.68rem; padding:4px 7px; border-radius:999px; border:1px solid var(--line); color:var(--text); background:var(--bg); text-transform:uppercase; }
+.risk-low { border-color:var(--green-line); color:var(--green); background:var(--green-dim); }
+.risk-moderate { border-color:rgba(245,158,11,.45); color:#f59e0b; background:rgba(245,158,11,.10); }
+.risk-high, .risk-critical { border-color:rgba(239,68,68,.45); color:var(--red-d); background:rgba(239,68,68,.10); }
+.debrief-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.debrief-grid div { padding:10px; background:rgba(0,0,0,.18); border:1px solid var(--line); border-radius:var(--r-sm); }
+.debrief-grid strong { display:block; font-family:var(--f-mono); font-size:.68rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; }
+.debrief-grid p { margin:0; font-size:.78rem; line-height:1.45; color:var(--text-dim); }
+.debrief-wide { grid-column:1 / -1; }
 
 /* =====================================================================
    TOAST

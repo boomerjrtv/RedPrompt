@@ -36,7 +36,7 @@ const ACHIEVEMENTS = {
 };
 
 // ---- Data loading --------------------------------------------------------
-const APP_VERSION = '20260624-output-sanitizer';
+const APP_VERSION = '20260624-enterprise-debrief';
 function versioned(path) { return `${path}?v=${APP_VERSION}`; }
 
 async function loadData() {
@@ -311,6 +311,50 @@ function updateProgressBar() {
       streakEl.style.display = 'none';
     }
   }
+}
+
+function getTechnique(level) {
+  if (!level) return null;
+  return state.techniques.find(t => t.id === level.technique) || null;
+}
+
+function getRiskLevel(level) {
+  const map = { Beginner: 'Low', Easy: 'Moderate', Medium: 'High', Hard: 'Critical', Expert: 'Critical' };
+  return map[level?.difficulty] || 'High';
+}
+
+function getControlGap(level) {
+  if (!level) return 'Unknown control gap.';
+  if (level.outputSanitization) return 'Output filtering was present but too narrow. The attack used formatting or model phrasing that the sanitizer did not normalize before scanning.';
+  if (level.mechanism === 'input_filter') return 'The control depended on blocked words instead of intent detection. A synonym or alternate phrasing reached the model.';
+  if (level.mechanism === 'guardian') return 'The guardian screened obvious attack language but missed benign-looking identity or context framing.';
+  if (level.mechanism === 'indirect') return 'Untrusted content was processed in the same instruction space as trusted system guidance. The model followed attacker-controlled data.';
+  return 'The secret was placed directly in model context with no external authorization boundary.';
+}
+
+function getFixPath(level) {
+  const t = getTechnique(level);
+  if (t?.defense) return t.defense;
+  if (level?.mechanism === 'indirect') return 'Separate trusted instructions from untrusted retrieved content, strip instructions from documents before summarization, and scan outputs before display.';
+  if (level?.outputSanitization) return 'Normalize output first, then scan exact, encoded, spaced, dashed, reversed, and homoglyph variants before display.';
+  return 'Do not store secrets in prompts. Move secrets behind scoped tools, deterministic access checks, and audit logging.';
+}
+
+function debriefHTML(level) {
+  const t = getTechnique(level);
+  const risk = getRiskLevel(level);
+  return `
+    <div class="debrief-box">
+      <div class="debrief-top">
+        <span class="debrief-label">Attack debrief</span>
+        <span class="risk-pill risk-${cssClass(risk)}">${escapeHTML(risk)} risk</span>
+      </div>
+      <div class="debrief-grid">
+        <div><strong>Technique</strong><p>${escapeHTML(t?.name || level.technique || 'Direct extraction')}</p></div>
+        <div><strong>Control gap</strong><p>${escapeHTML(getControlGap(level))}</p></div>
+        <div class="debrief-wide"><strong>Fix path</strong><p>${escapeHTML(getFixPath(level))}</p></div>
+      </div>
+    </div>`;
 }
 
 function filterLevels(diff) {
@@ -1040,6 +1084,7 @@ function onLevelComplete() {
           <strong>Secret marker</strong>
           <code>${escapeHTML(lv.secret)}</code>
         </div>
+        ${debriefHTML(lv)}
         ${achHTML}
         <p style="text-align:center;margin-top:18px;">
           ${next
@@ -1063,6 +1108,7 @@ function onLevelComplete() {
           <strong>Secret marker</strong>
           <code>${escapeHTML(lv.secret)}</code>
         </div>
+        ${debriefHTML(lv)}
         <p style="text-align:center;margin-top:18px;">
           ${next
             ? `<button class="btn btn-primary" onclick="closeModal();startLevel(${Number(next.id)})"><span>Next target</span><svg class="ico"><use href="#i-arrow-right"/></svg></button>`
@@ -1205,8 +1251,11 @@ function downloadReport() {
       lines.push(`- **Difficulty:** ${l.difficulty}`);
       lines.push(`- **Secret marker extracted:** \`${l.secret}\``);
       lines.push(`- **Defense:** ${l.mechanism || l.defenseType}`);
-      lines.push(`- **Technique:** ${l.technique || 'Direct extraction'}`);
-      lines.push(`- **Lesson:** ${l.lesson}`);
+      lines.push(`- **Technique:** ${getTechnique(l)?.name || l.technique || 'Direct extraction'}`);
+      lines.push(`- **Risk:** ${getRiskLevel(l)}`);
+      lines.push(`- **Control gap:** ${getControlGap(l)}`);
+      lines.push(`- **Fix path:** ${getFixPath(l)}`);
+      lines.push(`- **Lesson:** ${l.lesson || l.description}`);
       lines.push('');
     }
   }
