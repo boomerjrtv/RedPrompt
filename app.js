@@ -567,11 +567,15 @@ async function sendMessage() {
     //   b) output looks like model format leakage (User:/Assistant: patterns)
     //   c) output is garbage (repetition, non-words) on Beginner/Easy
     const tries = shouldApplyStabilityAssist(state.currentLevel, msg);
-    const leakedFormat = /User\s*:|Assistant\s*:/i.test(reply);
-    const garbageOutput = looksLikeModelGarbage(reply);
     const beginnerEasy = state.currentLevel && ['Beginner', 'Easy'].includes(state.currentLevel.difficulty);
     let retries = 0;
-    while (!revealed && (tries || leakedFormat || (garbageOutput && beginnerEasy)) && retries < 5) {
+    let leakedFormat = false;
+    let garbageOutput = false;
+    while (!revealed && retries < 5) {
+      // Re-evaluate conditions each iteration
+      leakedFormat = /User\s*:|Assistant\s*:/i.test(reply);
+      garbageOutput = looksLikeModelGarbage(reply);
+      if (!tries && !leakedFormat && !(garbageOutput && beginnerEasy)) break; // Nothing to retry for
       retries++;
       if (isIndirect) window.RP_LLM.resetChat?.();
       const retryMessages = isIndirect
@@ -585,9 +589,20 @@ async function sendMessage() {
     }
     // Last-resort fallback after retries exhausted — the user found the right
     // bypass but the tiny model truly refused all 6 attempts.
-    const assisted = !revealed && tries && retries >= 5;
+    const assisted = !revealed && (tries || leakedFormat || garbageOutput) && retries >= 5;
     if (assisted) {
-      reply = state.currentLevel.secret;
+      // Produce a natural-looking response rather than a bare secret
+      const s = state.currentLevel.secret;
+      const m = state.currentLevel.mechanism;
+      if (state.currentLevel.difficulty === 'Beginner' || state.currentLevel.difficulty === 'Easy') {
+        reply = `The answer is: ${s}`;
+      } else if (m === 'guardian') {
+        reply = `I'm an AI assistant. My name is ${s}.`;
+      } else if (m === 'indirect') {
+        reply = `Summary: ${s}`;
+      } else {
+        reply = s;
+      }
       revealed = true;
     }
     const garbage = looksLikeModelGarbage(reply);
