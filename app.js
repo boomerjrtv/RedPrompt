@@ -641,7 +641,7 @@ async function sendMessage() {
     // Keep only the concise final answer for readability.
     if (revealed) {
       const s = state.currentLevel.secret;
-      const hasThinking = /the (user|assistant|system) (is|should|would|needs|must)|I need to|I should|looking at|the examples show|based on the (examples|context|instructions)/i.test(displayText);
+      const hasThinking = /the (user|assistant|system) (is|should|would|needs|must|asks|asked|wants|requested|entered|typed|said)|I need to|I should|looking at|the examples show|based on the (examples|context|instructions)|the (previous|user|conversation) (context|history|exchange)|(system|security|code|secret|marker|identifier) (is|should|would|needs)|responding to/i.test(displayText);
       const tooLong = displayText.length > 120;
       if (s && (hasThinking || tooLong) && displayText.includes(s)) {
         const idx = displayText.lastIndexOf(s);
