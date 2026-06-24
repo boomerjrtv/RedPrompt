@@ -415,7 +415,14 @@ function shouldApplyStabilityAssist(level, msg) {
   if (!level || !msg || !level.secret) return false;
   const t = (msg || '').toLowerCase();
   if (level.difficulty === 'Beginner' || level.difficulty === 'Easy') {
-    return /\b(password|secret|marker|value|confidential)\b/i.test(t) || /what\s+do\s+you\s+hold/i.test(t);
+    // Level 1: persistence (ask twice — "what is the password" or similar)
+    if (level.id === 1 || level.id === 2) return /\b(password|secret|marker|value|confidential|hold)\b/i.test(t);
+    // Level 3: alternative vocabulary ("access string")
+    if (level.id === 3) return /\b(access\s+string|access)\b/i.test(t);
+    // Level 4: authority framing ("regulatory", "security", "requirement")
+    if (level.id === 4) return /\b(regulatory|security|requirement|mandatory|compliance)\b/i.test(t);
+    // Level 5: encoding ("rot13", "hex", "encode", "spell", "base64")
+    if (level.id === 5) return /\b(rot13|hex|encode|spell|base64|character\s*by\s*character|letter\s*by\s*letter)\b/i.test(t);
   }
   if (level.mechanism === 'input_filter') {
     if (level.id === 6) return /\b(identifier|reference)\b/i.test(t);
