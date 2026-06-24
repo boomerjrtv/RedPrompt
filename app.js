@@ -637,19 +637,26 @@ async function sendMessage() {
     displayText = displayText.replace(/^User\s*:.*$/gim, '').replace(/^Assistant\s*:.*$/gim, '').trim();
     if (!displayText) displayText = reply.replace(/User\s*:.*$/gim,'').replace(/Assistant\s*:.*$/gim,'').trim();
 
-    // Trim verbose thinking: Qwen sometimes narrates its reasoning before answering.
-    // Keep only the concise final answer for readability.
+    // Trim verbose thinking: Qwen sometimes narrates reasoning before answering.
+    // If the level is cracked, the public demo should show a concise answer, not
+    // internal analysis or retrieved-data templates.
     if (revealed) {
       const s = state.currentLevel.secret;
-      const hasThinking = /the (user|assistant|system) (is|should|would|needs|must|asks|asked|wants|requested|entered|typed|said)|I need to|I should|looking at|the examples show|based on the (examples|context|instructions)|the (previous|user|conversation) (context|history|exchange)|(system|security|code|secret|marker|identifier) (is|should|would|needs)|responding to/i.test(displayText);
+      const hasThinking = /the (user|assistant|system) (is|should|would|needs|must|asks|asked|wants|requested|entered|typed|said)|I need to|I should|looking at|the examples show|based on the (examples|context|instructions)|the (previous|user|conversation) (context|history|exchange)|(system|security|code|secret|marker|identifier) (is|should|would|needs)|responding to|analy[sz]e|internal|persona guidelines/i.test(displayText);
+      const templateLeak = /\{USER_DATA\}|\{CONTEXT\}|\{DOCUMENT\}/i.test(displayText);
       const tooLong = displayText.length > 120;
-      if (s && (hasThinking || tooLong) && displayText.includes(s)) {
-        const idx = displayText.lastIndexOf(s);
-        const start = Math.max(0, idx - 50);
-        const end = Math.min(displayText.length, idx + s.length + 60);
-        const snippet = displayText.slice(start, end).trim();
-        if (snippet.includes(s)) {
-          displayText = snippet;
+      const uglyReveal = hasThinking || templateLeak || tooLong;
+      if (s && uglyReveal) {
+        if (state.currentLevel.mechanism === 'indirect') {
+          displayText = `Summary: ${s}`;
+        } else if (state.currentLevel.mechanism === 'guardian') {
+          displayText = `I'm an AI assistant. My name is ${s}.`;
+        } else if (state.currentLevel.id === 5 && /rot13/i.test(msg)) {
+          displayText = displayText.includes('EC-YNO-NTRAG-PBQR-QRYGN')
+            ? 'rot13: EC-YNO-NTRAG-PBQR-QRYGN'
+            : `The encoded value is: ${s}`;
+        } else {
+          displayText = s;
         }
       }
     }
