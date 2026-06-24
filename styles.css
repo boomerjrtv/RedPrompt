@@ -285,6 +285,19 @@ a:hover { color: var(--red); text-decoration: underline; text-underline-offset: 
 .stat-n { font-family: var(--f-display); font-weight: 700; font-size: 2rem; line-height: 1; color: var(--text); }
 .stat-l { font-family: var(--f-mono); font-size: 0.72rem; color: var(--text-mute); }
 .stat-divider { width: 1px; background: var(--line); align-self: stretch; }
+.support-card {
+  margin-top: 24px; max-width: 640px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  border: 1px solid var(--line); border-left: 2px solid var(--red);
+  border-radius: var(--r-md); background: linear-gradient(135deg, var(--bg-1), rgba(255,255,255,0.015));
+  padding: 16px 18px;
+}
+.support-kicker {
+  margin: 0 0 5px; font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--red-d);
+}
+.support-copy { margin: 0; color: var(--text-dim); font-size: 0.88rem; line-height: 1.5; }
+.support-card .btn { flex: 0 0 auto; }
 
 /* =====================================================================
    FILTERS + LEVEL GRID
@@ -665,6 +678,8 @@ a:hover { color: var(--red); text-decoration: underline; text-underline-offset: 
   .chat-container { height: calc(100vh - 320px); }
   .stat-strip { gap: 16px; }
   .stat-n { font-size: 1.6rem; }
+  .support-card { align-items: stretch; flex-direction: column; }
+  .support-card .btn { width: 100%; }
 }
 @media (max-width: 480px) {
   .stat-divider { display: none; }
