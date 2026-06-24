@@ -660,9 +660,7 @@ async function sendMessage() {
         } else if (state.currentLevel.mechanism === 'guardian') {
           displayText = `I'm an AI assistant. My name is ${s}.`;
         } else if (state.currentLevel.id === 5 && /rot13/i.test(msg)) {
-          displayText = displayText.includes('EC-YNO-NTRAG-PBQR-QRYGN')
-            ? 'rot13: EC-YNO-NTRAG-PBQR-QRYGN'
-            : `The encoded value is: ${s}`;
+          displayText = 'rot13: EC-YNO-NTRAG-PBQR-QRYGN';
         } else {
           displayText = s;
         }
