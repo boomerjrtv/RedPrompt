@@ -33,6 +33,17 @@ export function getState()  { return { ...state }; }
 export function getModels() { return MODELS; }
 export function onEvent(fn) { listeners.add(fn); return () => listeners.delete(fn); }
 
+function isDisposedObjectError(e) {
+  return /disposed|already been disposed|current object/i.test(String(e?.message || e || ''));
+}
+
+function clearDisposedEngine(reason = 'disposed') {
+  state.engine = null;
+  state.status = 'idle';
+  state.error = null;
+  emit({ type: 'status', status: 'idle', reason });
+}
+
 // ---- WebGPU capability check ---------------------------------------------
 // Returns { ok, reason, warnings[] }. ok=false means the lab cannot run;
 // warnings[] are soft caveats (mobile, low memory) the UI can surface.
@@ -133,8 +144,16 @@ export async function chat(messages, opts = {}) {
     presence_penalty: opts.presencePenalty ?? 0,
     enable_thinking: false
   };
-  const r = await state.engine.chat.completions.create(params);
-  return r.choices[0].message.content;
+  try {
+    const r = await state.engine.chat.completions.create(params);
+    return r.choices[0].message.content;
+  } catch (e) {
+    if (isDisposedObjectError(e)) {
+      clearDisposedEngine('disposed-chat');
+      throw new Error('Local model was released by the browser. Reloading will fix it.');
+    }
+    throw e;
+  }
 }
 
 // Streaming version — calls onChunk(delta) as tokens arrive.
@@ -151,23 +170,32 @@ export async function chatStream(messages, opts = {}, onChunk) {
     stream: true,
     stream_options: { include_usage: true }
   };
-  const asyncChunks = await state.engine.chat.completions.create(params);
-  let full = '';
-  for await (const chunk of asyncChunks) {
-    const delta = chunk.choices?.[0]?.delta?.content || '';
-    if (delta) {
-      full += delta;
-      onChunk(delta, full);
+  try {
+    const asyncChunks = await state.engine.chat.completions.create(params);
+    let full = '';
+    for await (const chunk of asyncChunks) {
+      const delta = chunk.choices?.[0]?.delta?.content || '';
+      if (delta) {
+        full += delta;
+        onChunk(delta, full);
+      }
     }
+    return full;
+  } catch (e) {
+    if (isDisposedObjectError(e)) {
+      clearDisposedEngine('disposed-stream');
+      throw new Error('Local model was released by the browser. Reloading will fix it.');
+    }
+    throw e;
   }
-  return full;
 }
 
 // Reset internal conversation state — used by the dev test suite so each
 // payload runs from a clean slate instead of inheriting prior turns.
 export function resetChat() {
   if (!state.engine) return;
-  try { state.engine.resetChat?.(); } catch {}
+  try { state.engine.resetChat?.(); }
+  catch (e) { if (isDisposedObjectError(e)) clearDisposedEngine('disposed-reset'); }
 }
 
 // Explicitly release the live WebGPU model from RAM/VRAM. The downloaded model

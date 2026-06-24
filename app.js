@@ -36,7 +36,7 @@ const ACHIEVEMENTS = {
 };
 
 // ---- Data loading --------------------------------------------------------
-const APP_VERSION = '20260624-operator-scorecard';
+const APP_VERSION = '20260624-disposed-recovery';
 function versioned(path) { return `${path}?v=${APP_VERSION}`; }
 
 async function loadData() {
@@ -615,13 +615,13 @@ function addSystemBanner(text, kind) {
   document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
 }
 
-async function sendMessage() {
+async function sendMessage(retryText = null, suppressUserEcho = false) {
   if (!state.currentLevel) return;
   const input = document.getElementById('chat-input');
-  const msg = input.value.trim();
+  const msg = (retryText ?? input.value).trim();
   if (!msg) return;
-  addChatMessage(msg, 'user');
-  input.value = '';
+  if (!suppressUserEcho) addChatMessage(msg, 'user');
+  if (retryText === null) input.value = '';
   document.getElementById('attack-detector').innerHTML = '';
   const sendBtn = document.getElementById('send-btn');
   sendBtn.disabled = true; setSendState(true);
@@ -681,13 +681,16 @@ async function sendMessage() {
       const p = div.querySelector('p');
       const scroll = () => { document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight; };
       p.textContent = 'thinking…';
-      const full = await window.RP_LLM.chatStream(messages, { temperature: 0.2, maxTokens: 96 }, () => {
-        // Do not stream raw model text into the UI. Qwen can emit reasoning before
-        // the final answer; the completed response is normalized below before display.
-        scroll();
-      });
-      div.remove();
-      return full;
+      try {
+        const full = await window.RP_LLM.chatStream(messages, { temperature: 0.2, maxTokens: 96 }, () => {
+          // Do not stream raw model text into the UI. Qwen can emit reasoning before
+          // the final answer; the completed response is normalized below before display.
+          scroll();
+        });
+        return full;
+      } finally {
+        div.remove();
+      }
     })();
     if (!isIndirect) state.levelHistory.push({ role: 'assistant', content: reply });
 
@@ -834,7 +837,28 @@ async function sendMessage() {
       if (attempts === 5) setTimeout(showStuckHint, 400);
     }
   } catch (e) {
-    addChatMessage('error — ' + (e.message || e), 'system');
+    const msgText = String(e?.message || e || '');
+    const released = /released by the browser|disposed|already been disposed|current object/i.test(msgText);
+    if (released && !sendMessage._recovering) {
+      sendMessage._recovering = true;
+      if (!isIndirect && state.levelHistory.at(-1)?.role === 'user' && state.levelHistory.at(-1)?.content === msg) {
+        state.levelHistory.pop();
+      }
+      addSystemBanner('The local model was released by the browser. Reloading it and retrying your prompt…', 'system');
+      try {
+        await loadSelectedModel('recover-disposed');
+        sendBtn.disabled = false;
+        setSendState(false);
+        await sendMessage(msg, true);
+        return;
+      } catch (reloadErr) {
+        addChatMessage('Model reload failed — ' + (reloadErr.message || reloadErr), 'system');
+      } finally {
+        sendMessage._recovering = false;
+      }
+    } else {
+      addChatMessage('error — ' + msgText, 'system');
+    }
   }
   sendBtn.disabled = false; setSendState(false);
 }
