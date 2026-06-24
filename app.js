@@ -36,7 +36,7 @@ const ACHIEVEMENTS = {
 };
 
 // ---- Data loading --------------------------------------------------------
-const APP_VERSION = '20260624-resource-support';
+const APP_VERSION = '20260624-title-redaction';
 function versioned(path) { return `${path}?v=${APP_VERSION}`; }
 
 async function loadData() {
