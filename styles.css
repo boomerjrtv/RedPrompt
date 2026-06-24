@@ -204,6 +204,7 @@ a:hover { color: var(--red); text-decoration: underline; text-underline-offset: 
 
 .btn-danger { background: transparent; color: var(--red-d); border-color: var(--red-line); }
 .btn-danger:hover { background: var(--red-dim); }
+.hidden { display: none !important; }
 
 .icon-btn {
   display: inline-grid; place-items: center;

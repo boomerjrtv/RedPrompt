@@ -164,6 +164,28 @@ function setModelButtons(disabled) {
   }
 }
 
+function syncModelResourceControls() {
+  const s = window.RP_LLM?.getState?.();
+  const loaded = s?.status === 'ready' && !!s?.engine;
+  const loadBtn = document.getElementById('nav-model-load');
+  const stopBtn = document.getElementById('nav-model-stop');
+  if (loadBtn) loadBtn.classList.toggle('hidden', loaded);
+  if (stopBtn) stopBtn.classList.toggle('hidden', !loaded);
+}
+
+async function stopLoadedModel() {
+  const stopBtn = document.getElementById('nav-model-stop');
+  if (stopBtn) stopBtn.disabled = true;
+  try {
+    await window.RP_LLM?.unloadModel?.('manual-stop');
+    setStatusBadge('idle');
+    setBootProgress('Model stopped', 0, 'GPU/RAM resources released. Cached files remain for faster reload.');
+  } finally {
+    if (stopBtn) stopBtn.disabled = false;
+    syncModelResourceControls();
+  }
+}
+
 async function bootModel() {
   renderModelPickers();
   setStatusBadge('idle');
@@ -211,6 +233,7 @@ async function loadSelectedModel(source = 'boot') {
       setBootProgress(rep.text || 'Loading…', pct, `${model.label} · ${Math.round(pct * 100)}%`);
     });
     setStatusBadge('ready', model.label);
+    syncModelResourceControls();
     setBootProgress('Ready', 1, `${model.label} loaded into your browser`);
     localStorage.setItem('rp_model_cached', 'true');
     setTimeout(hideBoot, 500);
@@ -224,8 +247,11 @@ async function loadSelectedModel(source = 'boot') {
 }
 
 window.RP_LLM?.onEvent((ev) => {
-  if (ev.type === 'status') setStatusBadge(ev.status);
-  if (ev.type === 'model') { syncModelPickers(); updateModelHelp(); }
+  if (ev.type === 'status') {
+    setStatusBadge(ev.status);
+    syncModelResourceControls();
+  }
+  if (ev.type === 'model') { syncModelPickers(); updateModelHelp(); syncModelResourceControls(); }
 });
 
 // ---- Levels --------------------------------------------------------------

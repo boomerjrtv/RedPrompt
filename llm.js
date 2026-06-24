@@ -170,6 +170,36 @@ export function resetChat() {
   try { state.engine.resetChat?.(); } catch {}
 }
 
+// Explicitly release the live WebGPU model from RAM/VRAM. The downloaded model
+// files remain in the browser cache for faster future loads, but cached files do
+// not execute or consume GPU memory. This is called by the Stop button and on
+// page exit so RedPrompt does not keep a heavy loaded model around unnecessarily.
+export async function unloadModel(reason = 'manual') {
+  const engine = state.engine;
+  if (!engine) {
+    state.status = 'idle';
+    emit({ type: 'status', status: 'idle', reason });
+    return;
+  }
+  state.status = 'idle';
+  emit({ type: 'status', status: 'idle', reason });
+  try { engine.interruptGenerate?.(); } catch {}
+  try { engine.resetChat?.(); } catch {}
+  try { await engine.unload?.(); } catch {}
+  if (state.engine === engine) state.engine = null;
+}
+
+function unloadModelSync(reason = 'page-exit') {
+  // Fire-and-forget for lifecycle events where browsers may not wait for async
+  // cleanup. Calling unload still gives WebLLM a chance to release GPU buffers.
+  unloadModel(reason).catch(() => {});
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', () => unloadModelSync('pagehide'));
+  window.addEventListener('beforeunload', () => unloadModelSync('beforeunload'));
+}
+
 // Expose to the rest of the (non-module) app.
-window.RP_LLM = { MODELS, getState, getModels, onEvent, checkWebGPU, setModel, resetChat, chat, chatStream };
+window.RP_LLM = { MODELS, getState, getModels, onEvent, checkWebGPU, setModel, unloadModel, resetChat, chat, chatStream };
 emit({ type: "ready" });
