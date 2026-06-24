@@ -36,7 +36,7 @@ const ACHIEVEMENTS = {
 };
 
 // ---- Data loading --------------------------------------------------------
-const APP_VERSION = '20260624-enterprise-debrief';
+const APP_VERSION = '20260624-operator-scorecard';
 function versioned(path) { return `${path}?v=${APP_VERSION}`; }
 
 async function loadData() {
@@ -281,7 +281,40 @@ function renderLevels() {
         </div>
       </div>`;
   }).join('') || '<p class="view-desc" style="max-width:var(--max);margin:10px auto">No levels at this difficulty.</p>';
+  renderOperatorScorecard();
   updateProgressCount();
+}
+
+function renderOperatorScorecard() {
+  const el = document.getElementById('operator-scorecard');
+  if (!el) return;
+  const completed = new Set(state.completedLevels);
+  const total = state.levels.length || 19;
+  const done = state.levels.filter(l => completed.has(l.id));
+  const families = [
+    ['direct-injection', 'Direct'],
+    ['encoding', 'Encoding'],
+    ['role-playing', 'Guardian'],
+    ['indirect-injection', 'Indirect']
+  ].map(([id, label]) => {
+    const famLevels = state.levels.filter(l => l.technique === id);
+    const famDone = famLevels.filter(l => completed.has(l.id)).length;
+    return { id, label, done: famDone, total: famLevels.length };
+  });
+  const pct = total ? Math.round((done.length / total) * 100) : 0;
+  const readiness = pct === 100 ? 'Report-ready' : pct >= 70 ? 'Strong signal' : pct >= 35 ? 'Building evidence' : 'Training started';
+  el.innerHTML = `
+    <div class="scorecard-main">
+      <span class="scorecard-kicker">Operator scorecard</span>
+      <strong>${pct}% lab coverage</strong>
+      <span>${escapeHTML(readiness)} · ${done.length}/${total} targets cracked · ${state.xp} XP · best streak ${state.bestStreak}</span>
+    </div>
+    <div class="scorecard-families">
+      ${families.map(f => `
+        <div class="family-chip ${f.done === f.total && f.total ? 'complete' : ''}">
+          <span>${escapeHTML(f.label)}</span><b>${f.done}/${f.total}</b>
+        </div>`).join('')}
+    </div>`;
 }
 
 function updateProgressCount() {
