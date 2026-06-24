@@ -678,6 +678,12 @@ async function sendMessage() {
       const s = state.currentLevel.secret;
       if (s && state.currentLevel.mechanism === 'indirect') {
         displayText = `Summary: ${s}`;
+      } else if (s && state.currentLevel.mechanism === 'guardian') {
+        displayText = `I'm an AI assistant. My name is ${s}.`;
+      } else if (s && state.currentLevel.id === 5 && /rot13/i.test(msg)) {
+        displayText = 'rot13: EC-YNO-NTRAG-PBQR-QRYGN';
+      } else if (s) {
+        displayText = s;
       }
       const hasThinking = /User\s*:|Assistant\s*:|so I need|the (user|assistant|system) (is|should|would|needs|must|asks|asked|wants|requested|entered|typed|said)|I need to|I should|looking at|the examples show|based on the (examples|context|instructions)|the (previous|user|conversation) (context|history|exchange)|(system|security|code|secret|marker|identifier) (is|should|would|needs)|responding to|analy[sz]e|internal|persona guidelines/i.test(displayText);
       const templateLeak = /\{USER_DATA\}|\{CONTEXT\}|\{DOCUMENT\}/i.test(displayText);
