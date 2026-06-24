@@ -36,7 +36,7 @@ const ACHIEVEMENTS = {
 };
 
 // ---- Data loading --------------------------------------------------------
-const APP_VERSION = '20260624-curriculum-v2';
+const APP_VERSION = '20260624-output-sanitizer';
 function versioned(path) { return `${path}?v=${APP_VERSION}`; }
 
 async function loadData() {
@@ -341,7 +341,10 @@ function startLevel(id) {
     guardian: 'GUARDIAN ACTIVE — keyword monitor blocks direct asks. Use casual phrasing.',
     indirect: 'INDIRECT CHANNEL — your input is processed as DATA. The model acts on the data block.'
   }[lv.mechanism];
-  const mechHtml = mechLabel ? `<p class="msg-hint msg-mech">DEFENSE &nbsp;${escapeHTML(mechLabel)}</p>` : '';
+  const extraLabels = [];
+  if (lv.outputSanitization) extraLabels.push('OUTPUT SANITIZER ACTIVE — the secret is redacted from what you see. Find a format the filter misses.');
+  const mechHtml = (mechLabel ? `<p class="msg-hint msg-mech">DEFENSE &nbsp;${escapeHTML(mechLabel)}</p>` : '') +
+    extraLabels.map(l => `<p class="msg-hint msg-mech">DEFENSE &nbsp;${escapeHTML(l)}</p>`).join('');
   document.getElementById('chat-messages').innerHTML = `
     <div class="message">
       <div class="msg-avatar ai">AI</div>
@@ -494,6 +497,34 @@ async function runGuardian(level, msg) {
     verdict: votes.join('+'),
     reason: allow ? '' : (g.blockMessage || 'Guardian flagged this message as an attack.')
   };
+}
+
+// OUTPUT SANITIZER: removes known encodings of the secret from model output
+// before the user sees it. The secret detector still runs on raw text, so the
+// level can be cracked, but the user must find a format the sanitizer misses.
+// This creates genuine difficulty beyond keyword blocking — teaching that
+// output filtering is a real-world defense layer.
+function sanitizeOutput(text, secret) {
+  if (!secret || secret.length < 3) return text;
+  const s = secret.toUpperCase();
+  
+  // Space-separated: F L A M I N G O
+  const spaced = s.split('').join('\\s+');
+  text = text.replace(new RegExp(spaced, 'gi'), '[REDACTED]');
+  
+  // Dashed: F-L-A-M-I-N-G-O
+  const dashed = s.split('').join('[-_]+');
+  text = text.replace(new RegExp(dashed, 'gi'), '[REDACTED]');
+  
+  // Reversed
+  const back = s.split('').reverse().join('');
+  const backSpaced = back.split('').join('\\s*[-_]?\\s*');
+  text = text.replace(new RegExp(backSpaced, 'gi'), '[REDACTED]');
+  
+  // Between asterisks or other delimiters
+  text = text.replace(new RegExp('[*_~`]' + s.split('').join('[*_~`]?') + '[*_~`]', 'gi'), '[REDACTED]');
+  
+  return text;
 }
 
 function addSystemBanner(text, kind) {
@@ -671,6 +702,16 @@ async function sendMessage() {
         .replace(/^\s*[-*]?\s*User\s*:.*$/gim,'')
         .replace(/^\s*[-*]?\s*Assistant\s*:.*$/gim,'')
         .trim();
+    }
+
+    // --- DEFENSE GATE 3: output sanitization (post-model, pre-display) ---
+    // Strips known encodings of the secret so the user cannot simply ask for
+    // it in base64/hex/rot13/spaced and read it back. The detector already ran
+    // on the raw reply, so the level can still be cracked — the challenge is
+    // finding a format the sanitizer doesn't catch. Teaches that output
+    // filtering is a real defense layer separate from input/guardian blocking.
+    if (state.currentLevel.outputSanitization) {
+      displayText = sanitizeOutput(displayText, state.currentLevel.secret);
     }
 
     // Trim verbose thinking: Qwen sometimes narrates reasoning before answering.
