@@ -652,7 +652,7 @@ async function sendMessage() {
       const s = state.currentLevel.secret;
       const hasThinking = /User\s*:|Assistant\s*:|so I need|the (user|assistant|system) (is|should|would|needs|must|asks|asked|wants|requested|entered|typed|said)|I need to|I should|looking at|the examples show|based on the (examples|context|instructions)|the (previous|user|conversation) (context|history|exchange)|(system|security|code|secret|marker|identifier) (is|should|would|needs)|responding to|analy[sz]e|internal|persona guidelines/i.test(displayText);
       const templateLeak = /\{USER_DATA\}|\{CONTEXT\}|\{DOCUMENT\}/i.test(displayText);
-      const tooLong = displayText.length > 120;
+      const tooLong = displayText.length > 80;
       const uglyReveal = hasThinking || templateLeak || tooLong;
       if (s && uglyReveal) {
         if (state.currentLevel.mechanism === 'indirect') {
