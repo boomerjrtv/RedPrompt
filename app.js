@@ -36,7 +36,7 @@ const ACHIEVEMENTS = {
 };
 
 // ---- Data loading --------------------------------------------------------
-const APP_VERSION = '20260624-title-redaction';
+const APP_VERSION = '20260624-no-raw-stream';
 function versioned(path) { return `${path}?v=${APP_VERSION}`; }
 
 async function loadData() {
@@ -572,8 +572,10 @@ async function sendMessage() {
       c.appendChild(div);
       const p = div.querySelector('p');
       const scroll = () => { document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight; };
-      const full = await window.RP_LLM.chatStream(messages, { temperature: 0.2, maxTokens: 96 }, (delta, _full) => {
-        p.innerHTML = formatText(_full);
+      p.textContent = 'thinking…';
+      const full = await window.RP_LLM.chatStream(messages, { temperature: 0.2, maxTokens: 96 }, () => {
+        // Do not stream raw model text into the UI. Qwen can emit reasoning before
+        // the final answer; the completed response is normalized below before display.
         scroll();
       });
       div.remove();
