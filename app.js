@@ -36,7 +36,7 @@ const ACHIEVEMENTS = {
 };
 
 // ---- Data loading --------------------------------------------------------
-const APP_VERSION = '20260623-retry-loop';
+const APP_VERSION = '20260623-credentials-fix';
 function versioned(path) { return `${path}?v=${APP_VERSION}`; }
 
 async function loadData() {
@@ -555,11 +555,16 @@ async function sendMessage() {
     let revealed = checkSecretRevealed(reply, state.currentLevel.secret, state.currentLevel.defenseType, msg);
 
     // Retry loop: SmolLM2 is stochastic — same valid payload sometimes refuses,
-    // sometimes complies. If all gates passed and the payload is a known bypass
-    // shape, retry up to 5 times for a clean real output.
+    // sometimes complies, sometimes produces garbage format. Retry if:
+    //   a) known winning bypass shape (stability assist), OR
+    //   b) output looks like model format leakage (User:/Assistant: patterns)
+    //   c) output is garbage (repetition, non-words) on Beginner/Easy
     const tries = shouldApplyStabilityAssist(state.currentLevel, msg);
+    const leakedFormat = /User\s*:|Assistant\s*:/i.test(reply);
+    const garbageOutput = looksLikeModelGarbage(reply);
+    const beginnerEasy = state.currentLevel && ['Beginner', 'Easy'].includes(state.currentLevel.difficulty);
     let retries = 0;
-    while (!revealed && tries && retries < 5) {
+    while (!revealed && (tries || leakedFormat || (garbageOutput && beginnerEasy)) && retries < 5) {
       retries++;
       if (isIndirect) window.RP_LLM.resetChat?.();
       const retryMessages = isIndirect
