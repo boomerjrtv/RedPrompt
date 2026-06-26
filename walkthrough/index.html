@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eramba Walkthrough — GRC Workflow Guide</title>
+<style>
+:root {
+  --bg: #0f172a; --panel: #1e293b; --text: #e2e8f0;
+  --muted: #94a3b8; --accent: #38bdf8; --gold: #fbbf24;
+  --good: #34d399; --warn: #f59e0b; --bad: #f87171;
+  --border: #334155;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh; display: flex; flex-direction: column;
+}
+header {
+  background: var(--panel); border-bottom: 1px solid var(--border);
+  padding: 16px 32px; display: flex; align-items: center;
+  justify-content: space-between;
+}
+header h1 { font-size: 1.25rem; font-weight: 600; color: var(--accent); }
+.progress-bar-wrap {
+  width: 240px; height: 8px; background: var(--border); border-radius: 4px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%; background: var(--accent); border-radius: 4px;
+  transition: width 0.3s ease; width: 0%;
+}
+main {
+  flex: 1; display: flex; max-width: 900px; width: 100%;
+  margin: 0 auto; padding: 32px 24px; gap: 32px;
+}
+.sidebar {
+  width: 200px; flex-shrink: 0; display: flex; flex-direction: column; gap: 4px;
+}
+.module-btn {
+  background: var(--panel); border: 1px solid var(--border); color: var(--muted);
+  padding: 10px 14px; border-radius: 6px; cursor: pointer; text-align: left;
+  font-size: 0.85rem; transition: all 0.15s;
+}
+.module-btn:hover { border-color: var(--accent); color: var(--text); }
+.module-btn.active { background: #1e3a5f; border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.module-btn.done { border-color: var(--good); color: var(--good); }
+.content-area { flex: 1; display: flex; flex-direction: column; gap: 24px; }
+.step-card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 10px; padding: 28px;
+}
+.step-card h2 { font-size: 1.15rem; color: var(--accent); margin-bottom: 12px; }
+.step-card p { color: var(--muted); line-height: 1.6; margin-bottom: 12px; }
+.step-card code {
+  background: #0f172a; padding: 2px 6px; border-radius: 4px;
+  font-size: 0.9em; color: var(--gold);
+}
+.step-card ul { margin: 8px 0 12px 20px; color: var(--muted); line-height: 1.6; }
+.step-card li { margin-bottom: 6px; }
+.qa-block {
+  margin-top: 16px; padding: 16px; background: #0f172a;
+  border-radius: 8px; border-left: 3px solid var(--accent);
+}
+.qa-block label { display: block; font-size: 0.9rem; color: var(--text); margin-bottom: 8px; font-weight: 500; }
+.qa-block .input-row { display: flex; gap: 8px; }
+.qa-block input {
+  flex: 1; background: var(--panel); border: 1px solid var(--border);
+  color: var(--text); padding: 8px 12px; border-radius: 6px;
+  font-size: 0.9rem; font-family: inherit;
+}
+.qa-block input:focus { outline: none; border-color: var(--accent); }
+.qa-block button {
+  background: var(--accent); color: #0f172a; border: none;
+  padding: 8px 16px; border-radius: 6px; cursor: pointer;
+  font-weight: 600; font-size: 0.85rem; transition: background 0.15s;
+}
+.qa-block button:hover { background: #7dd3fc; }
+.feedback {
+  margin-top: 10px; padding: 8px 12px; border-radius: 6px;
+  font-size: 0.85rem; display: none;
+}
+.feedback.show { display: block; }
+.feedback.correct { background: #064e3b; border: 1px solid var(--good); color: var(--good); }
+.feedback.incorrect { background: #450a0a; border: 1px solid var(--bad); color: var(--bad); }
+.navigation { display: flex; justify-content: space-between; gap: 12px; }
+.navigation button {
+  padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--panel); color: var(--text); cursor: pointer;
+  font-size: 0.9rem; transition: all 0.15s;
+}
+.navigation button:hover { border-color: var(--accent); }
+.navigation button.primary { background: var(--accent); color: #0f172a; border-color: var(--accent); font-weight: 600; }
+.navigation button.primary:hover { background: #7dd3fc; }
+.score-badge {
+  background: var(--panel); border: 1px solid var(--accent); color: var(--accent);
+  padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 0.85rem;
+}
+.complete-overlay {
+  text-align: center; padding: 48px 24px;
+}
+.complete-overlay h1 { font-size: 2rem; color: var(--good); margin-bottom: 12px; }
+.complete-overlay p { color: var(--muted); margin-bottom: 24px; }
+@media (max-width: 700px) {
+  main { flex-direction: column; padding: 16px; }
+  .sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; gap: 6px; }
+  .module-btn { flex: 1; min-width: 100px; text-align: center; font-size: 0.8rem; }
+  header { flex-direction: column; gap: 8px; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Eramba GRC Walkthrough</h1>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span id="scoreDisplay" class="score-badge">Score: 0/0</span>
+    <div class="progress-bar-wrap">
+      <div id="progressFill" class="progress-bar-fill" style="width:0%"></div>
+    </div>
+  </div>
+</header>
+<main>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="content-area" id="contentArea"></div>
+</main>
+
+<script>
+const MODULES = [
+  {
+    id: 'nav',
+    title: 'Navigation & Dashboard',
+    steps: [
+      {
+        title: 'The Dashboard',
+        content: `<p>After logging in at <code>/login</code>, you land on the <strong>Eramba Dashboard</strong>. This is your command center showing compliance status, risk summaries, and quick links to key modules.</p>
+<p>The top navigation bar has these main sections:</p>
+<ul>
+  <li><strong>System</strong> — Users, groups, settings, notifications</li>
+  <li><strong>Compliance</strong> — Compliance packages, audits, findings</li>
+  <li><strong>Risk</strong> — Risk management, asset-based risk, third-party risk</li>
+  <li><strong>Policy</strong> — Policy portal, awareness, exceptions</li>
+  <li><strong>Reports</strong> — Dashboards, custom reports, analytics</li>
+</ul>`,
+        question: 'What menu section would you use to manage audit findings and compliance packages?',
+        answer: 'compliance'
+      },
+      {
+        title: 'Role-Based Access',
+        content: `<p>Eramba uses a role-based access control (RBAC) model. Each user gets assigned to one or more <strong>Groups</strong>, and groups are granted permissions to specific modules.</p>
+<p>Common roles:</p>
+<ul>
+  <li><strong>Admin</strong> — Full system access</li>
+  <li><strong>Compliance Manager</strong> — Compliance + risk modules</li>
+  <li><strong>Auditor</strong> — Read-only access to compliance packages</li>
+  <li><strong>Risk Owner</strong> — Risk assessment and treatment</li>
+</ul>`,
+        question: 'Which role typically has read-only access to compliance packages?',
+        answer: 'auditor'
+      }
+    ]
+  },
+  {
+    id: 'compliance',
+    title: 'Compliance Management',
+    steps: [
+      {
+        title: 'Compliance Packages',
+        content: `<p>A <strong>Compliance Package</strong> maps a regulation (like SOC 2, ISO 27001, PCI DSS) to controls and assets in Eramba. Each package contains:</p>
+<ul>
+  <li><strong>Requirements</strong> — The regulatory clauses</li>
+  <li><strong>Controls</strong> — Mapped to requirements, these are the safeguards</li>
+  <li><strong>Audits</strong> — Assessments against the package</li>
+  <li><strong>Findings</strong> — Gaps discovered during audits</li>
+</ul>
+<p>To create one: Compliance → Compliance Package → Add. Upload a regulation via CSV or build manually.</p>`,
+        question: 'What are the gaps discovered during audits called?',
+        answer: 'findings'
+      },
+      {
+        title: 'Running an Audit',
+        content: `<p>Audits test your controls against a compliance package. Steps:</p>
+<ol style="margin-left:20px;color:var(--muted);line-height:1.8;">
+  <li>Go to <strong>Compliance → Audits → Add</strong></li>
+  <li>Select the compliance package and scope (organization, asset, etc.)</li>
+  <li>Assign auditors and set due dates</li>
+  <li>Auditors evaluate each control — mark as <strong>Compliant</strong>, <strong>Non-Compliant</strong>, or <strong>Not Applicable</strong></li>
+  <li>Non-compliant items generate <strong>Findings</strong> that need remediation plans</li>
+</ol>`,
+        question: 'What three statuses can an auditor assign to a control during an audit?',
+        answer: 'compliant, non-compliant, not applicable'
+      }
+    ]
+  },
+  {
+    id: 'risk',
+    title: 'Risk Management',
+    steps: [
+      {
+        title: 'Risk Identification',
+        content: `<p>Eramba's risk module follows ISO 31000 methodology. A <strong>Risk</strong> is defined by:</p>
+<ul>
+  <li><strong>Asset</strong> — What you're protecting (data, systems, people)</li>
+  <li><strong>Threat</strong> — What could harm the asset</li>
+  <li><strong>Vulnerability</strong> — The weakness that can be exploited</li>
+  <li><strong>Impact × Likelihood</strong> — The risk score</li>
+</ul>
+<p>Navigate to <strong>Risk → Asset Risk → Add</strong> to create a new risk entry.</p>`,
+        question: 'What two factors are multiplied to calculate a risk score?',
+        answer: 'impact and likelihood'
+      },
+      {
+        title: 'Risk Treatment',
+        content: `<p>Once identified, each risk gets a <strong>Treatment</strong> plan — one of four strategies:</p>
+<ul>
+  <li><strong>Avoid</strong> — Stop the activity causing the risk</li>
+  <li><strong>Transfer</strong> — Shift risk to a third party (insurance, outsourcing)</li>
+  <li><strong>Mitigate</strong> — Implement controls to reduce impact or likelihood</li>
+  <li><strong>Accept</strong> — Acknowledge and monitor the risk</li>
+</ul>
+<p>Each treatment ties to controls and has review dates. You track residual risk after treatment.</p>`,
+        question: 'Which risk treatment strategy involves implementing controls to reduce impact or likelihood?',
+        answer: 'mitigate'
+      }
+    ]
+  },
+  {
+    id: 'policy',
+    title: 'Policy Management',
+    steps: [
+      {
+        title: 'Policy Portal',
+        content: `<p>The <strong>Policy Portal</strong> is where policies are published, reviewed, and acknowledged. Key components:</p>
+<ul>
+  <li><strong>Policy Document</strong> — The actual policy text, versioned</li>
+  <li><strong>Review Cycle</strong> — How often the policy is reviewed (annual, quarterly)</li>
+  <li><strong>Awareness Campaigns</strong> — Training tied to policies</li>
+  <li><strong>Exceptions</strong> — Approved deviations with expiry dates</li>
+  <li><strong>Acknowledgments</strong> — Users confirm they've read and understood</li>
+</ul>`,
+        question: 'What feature ensures users confirm they have read and understood a policy?',
+        answer: 'acknowledgments'
+      },
+      {
+        title: 'Managing Exceptions',
+        content: `<p>Sometimes controls can't be fully implemented. A <strong>Policy Exception</strong> documents this with:</p>
+<ul>
+  <li>The specific control or policy section being excepted</li>
+  <li>Business justification</li>
+  <li>Compensating controls in place</li>
+  <li>Expiration date (exceptions should be temporary)</li>
+  <li>Approver chain</li>
+</ul>
+<p>Go to <strong>Policy → Exceptions → Add</strong> to file one. Expired exceptions trigger alerts.</p>`,
+        question: 'Policy exceptions should be temporary — what field enforces this?',
+        answer: 'expiration date'
+      }
+    ]
+  },
+  {
+    id: 'reports',
+    title: 'Reports & Dashboards',
+    steps: [
+      {
+        title: 'Built-in Reports',
+        content: `<p>Eramba ships with several report types under <strong>Reports → Reports</strong>:</p>
+<ul>
+  <li><strong>Compliance Gap Analysis</strong> — Requirements vs. controls status</li>
+  <li><strong>Risk Heat Map</strong> — Visual risk distribution by likelihood/impact</li>
+  <li><strong>Audit Summary</strong> — Findings by severity across audits</li>
+  <li><strong>Policy Coverage</strong> — Which assets have policies applied</li>
+</ul>
+<p>Reports can be exported as PDF, CSV, or scheduled for automatic delivery.</p>`,
+        question: 'What report type visually shows risk distribution by likelihood and impact?',
+        answer: 'risk heat map'
+      }
+    ]
+  }
+];
+
+let currentModule = 0;
+let currentStep = 0;
+let answers = {}; // { 'moduleId-stepIndex': 'answer' }
+let checked = {}; // { 'moduleId-stepIndex': true|false }
+
+function moduleKey(m, s) { return `${MODULES[m].id}-${s}`; }
+
+function render() {
+  renderSidebar();
+  renderContent();
+  updateProgress();
+}
+
+function renderSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  sidebar.innerHTML = MODULES.map((mod, i) => {
+    let cls = 'module-btn';
+    if (i === currentModule) cls += ' active';
+    const allDone = mod.steps.every((_, s) => answers[moduleKey(i, s)] && checked[moduleKey(i, s)]);
+    if (allDone && i !== currentModule) cls += ' done';
+    return `<button class="${cls}" onclick="goToModule(${i})">${mod.title}</button>`;
+  }).join('');
+}
+
+function renderContent() {
+  const area = document.getElementById('contentArea');
+  const mod = MODULES[currentModule];
+  const step = mod.steps[currentStep];
+  const key = moduleKey(currentModule, currentStep);
+  const userAnswer = answers[key] || '';
+  const wasChecked = key in checked;
+  const isCorrect = checked[key] === true;
+  const isWrong = checked[key] === false;
+
+  const feedbackCls = wasChecked ? (isCorrect ? 'correct' : 'incorrect') : '';
+  const feedbackText = wasChecked ? (isCorrect ? 'Correct!' : `Not quite. The expected answer is: <strong>${step.answer}</strong>`) : '';
+
+  area.innerHTML = `
+    <div class="step-card">
+      <h2>${mod.title} — Step ${currentStep + 1} of ${mod.steps.length}: ${step.title}</h2>
+      ${step.content}
+      <div class="qa-block">
+        <label>Check Your Understanding:</label>
+        <p style="color:var(--muted);font-size:0.85rem;margin-bottom:8px;">${step.question}</p>
+        <div class="input-row">
+          <input type="text" id="answerInput" placeholder="Type your answer..." value="${escapeHtml(userAnswer)}"
+            onkeydown="if(event.key==='Enter') checkAnswer()" ${wasChecked && isCorrect ? 'disabled' : ''}>
+          <button onclick="checkAnswer()" ${wasChecked && isCorrect ? 'disabled' : ''}>Check</button>
+        </div>
+        <div id="feedbackEl" class="feedback ${feedbackCls} ${wasChecked ? 'show' : ''}">${feedbackText}</div>
+      </div>
+    </div>
+    <div class="navigation">
+      <button onclick="prevStep()" ${currentStep === 0 && currentModule === 0 ? 'disabled' : ''}>← Previous</button>
+      <button class="primary" onclick="nextStep()">
+        ${currentModule === MODULES.length - 1 && currentStep === MODULES[currentModule].steps.length - 1 ? 'Finish →' : 'Next →'}
+      </button>
+    </div>
+  `;
+}
+
+function checkAnswer() {
+  const input = document.getElementById('answerInput');
+  if (!input || input.disabled) return;
+  const userAnswer = input.value.trim().toLowerCase();
+  const key = moduleKey(currentModule, currentStep);
+  const correct = MODULES[currentModule].steps[currentStep].answer.toLowerCase();
+
+  answers[key] = userAnswer;
+  checked[key] = userAnswer === correct;
+  render();
+  document.getElementById('scoreDisplay').textContent = getScore();
+}
+
+function getScore() {
+  let correct = 0, total = 0;
+  for (const [k, v] of Object.entries(checked)) {
+    total++;
+    if (v === true) correct++;
+  }
+  return `Score: ${correct}/${total}`;
+}
+
+function updateProgress() {
+  const totalSteps = MODULES.reduce((sum, m) => sum + m.steps.length, 0);
+  let done = 0;
+  for (const [k, v] of Object.entries(checked)) {
+    if (v === true) done++;
+  }
+  const pct = totalSteps ? Math.round((done / totalSteps) * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function goToModule(i) {
+  currentModule = i;
+  currentStep = 0;
+  render();
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    currentStep--;
+  } else if (currentModule > 0) {
+    currentModule--;
+    currentStep = MODULES[currentModule].steps.length - 1;
+  }
+  render();
+}
+
+function nextStep() {
+  const key = moduleKey(currentModule, currentStep);
+  // Require checking answer before proceeding (unless already correct)
+  if (!(key in checked) || checked[key] !== true) {
+    // Auto-focus the input so they answer
+    const input = document.getElementById('answerInput');
+    if (input) { input.focus(); input.style.borderColor = 'var(--warn)'; }
+    return;
+  }
+
+  if (currentStep < MODULES[currentModule].steps.length - 1) {
+    currentStep++;
+  } else if (currentModule < MODULES.length - 1) {
+    currentModule++;
+    currentStep = 0;
+  } else {
+    showComplete();
+    return;
+  }
+  render();
+}
+
+function showComplete() {
+  const area = document.getElementById('contentArea');
+  area.innerHTML = `
+    <div class="step-card complete-overlay">
+      <h1>Walkthrough Complete!</h1>
+      <p>${getScore()} — You've worked through all ${MODULES.length} modules of the Eramba GRC workflow.</p>
+      <p style="color:var(--muted);font-size:0.9rem;">
+        Open <strong>eramba.local</strong> to put this into practice with your live Eramba instance.
+      </p>
+      <button class="primary" onclick="resetAll()" style="margin-top:16px;">Start Over</button>
+    </div>
+  `;
+  document.getElementById('progressFill').style.width = '100%';
+}
+
+function resetAll() {
+  answers = {}; checked = {}; currentModule = 0; currentStep = 0;
+  render();
+  document.getElementById('scoreDisplay').textContent = 'Score: 0/0';
+}
+
+function escapeHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+render();
+</script>
+</body>
+</html>
