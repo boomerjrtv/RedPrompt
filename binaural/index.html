@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Binaural Beats — Frequency Calculator</title>
+<style>
+:root {
+  --bg: #0a0e17; --panel: #111827; --text: #e2e8f0;
+  --muted: #94a3b8; --accent: #818cf8; --pink: #f472b6;
+  --gold: #fbbf24; --good: #34d399; --warn: #f59e0b; --bad: #f87171;
+  --border: #1e293b; --glow: rgba(129,140,248,0.15);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center;
+}
+header {
+  text-align: center; padding: 40px 24px 20px;
+}
+header h1 { font-size: 1.6rem; font-weight: 700; color: var(--accent); letter-spacing: -0.02em; }
+header p { color: var(--muted); margin-top: 6px; font-size: 0.9rem; }
+.container {
+  max-width: 640px; width: 100%; padding: 0 24px;
+}
+.freq-panel {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 14px; padding: 32px; margin-bottom: 20px;
+}
+.ear-row {
+  display: flex; gap: 20px; align-items: center; margin-bottom: 20px;
+}
+.ear-block {
+  flex: 1; text-align: center;
+}
+.ear-block label {
+  display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 6px;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.ear-block .ear-icon { font-size: 1.4rem; margin-bottom: 4px; display: block; }
+.ear-block input {
+  width: 100%; text-align: center; font-size: 1.8rem; font-weight: 700;
+  font-family: inherit; background: var(--bg); border: 2px solid var(--border);
+  color: var(--text); padding: 12px; border-radius: 10px;
+  transition: border-color 0.2s;
+}
+.ear-block input:focus { outline: none; border-color: var(--accent); }
+.ear-block input.left { border-color: var(--accent); }
+.ear-block input.right { border-color: var(--pink); }
+.ear-block .sub { font-size: 0.7rem; color: var(--muted); margin-top: 4px; }
+.vs { font-size: 1.5rem; color: var(--muted); font-weight: 300; padding-top: 20px; }
+
+.beat-display {
+  text-align: center; padding: 20px; background: var(--bg);
+  border-radius: 10px; border: 1px solid var(--border); margin: 16px 0;
+}
+.beat-display .formula { color: var(--muted); font-size: 0.8rem; margin-bottom: 4px; }
+.beat-display .beat-hz {
+  font-size: 4rem; font-weight: 800; letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--accent), var(--pink));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.beat-display .beat-label { color: var(--muted); font-size: 0.85rem; }
+
+.state-badge {
+  display: inline-block; padding: 6px 16px; border-radius: 20px;
+  font-weight: 700; font-size: 0.85rem; margin-top: 8px;
+  letter-spacing: 0.03em;
+}
+.state-gamma  { background: #4c1d95; color: #c4b5fd; border: 1px solid #7c3aed; }
+.state-beta   { background: #1e3a5f; color: #93c5fd; border: 1px solid #3b82f6; }
+.state-alpha  { background: #064e3b; color: #6ee7b7; border: 1px solid #10b981; }
+.state-theta  { background: #1a2e4a; color: #67e8f9; border: 1px solid #06b6d4; }
+.state-delta  { background: #1e1b4b; color: #a5b4fc; border: 1px solid #6366f1; }
+.state-unknown { background: var(--border); color: var(--muted); border: 1px solid var(--border); }
+
+.wave-viz {
+  position: relative; height: 120px; background: var(--bg);
+  border-radius: 10px; overflow: hidden; margin: 16px 0;
+  border: 1px solid var(--border);
+}
+.wave-viz canvas { width: 100%; height: 100%; }
+
+.presets {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px;
+  justify-content: center;
+}
+.preset-btn {
+  padding: 8px 14px; border-radius: 20px; border: 1px solid var(--border);
+  background: var(--panel); color: var(--text); cursor: pointer;
+  font-size: 0.8rem; font-family: inherit; transition: all 0.15s;
+}
+.preset-btn:hover { border-color: var(--accent); background: var(--bg); }
+.preset-btn .st { display: block; font-size: 0.65rem; color: var(--muted); }
+
+.info-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;
+}
+.info-card {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.15s;
+}
+.info-card:hover { border-color: var(--accent); }
+.info-card h3 { font-size: 0.85rem; margin-bottom: 4px; }
+.info-card .range { font-size: 0.7rem; color: var(--muted); }
+.info-card .desc { font-size: 0.75rem; color: var(--muted); line-height: 1.4; margin-top: 4px; }
+
+.footer-links {
+  text-align: center; padding: 32px 24px;
+  color: var(--muted); font-size: 0.75rem;
+}
+.footer-links a { color: var(--accent); text-decoration: none; }
+
+.quiz-section {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 14px; padding: 28px; margin-top: 24px;
+}
+.quiz-section h2 { font-size: 1.1rem; color: var(--accent); margin-bottom: 16px; }
+.quiz-q { margin-bottom: 16px; }
+.quiz-q .q-text { color: var(--text); margin-bottom: 8px; font-weight: 500; }
+.quiz-q .q-row { display: flex; gap: 8px; }
+.quiz-q input {
+  flex: 1; background: var(--bg); border: 1px solid var(--border);
+  color: var(--text); padding: 8px 12px; border-radius: 8px;
+  font-family: inherit; font-size: 0.9rem;
+}
+.quiz-q input:focus { outline: none; border-color: var(--accent); }
+.quiz-q button {
+  background: var(--accent); color: #fff; border: none;
+  padding: 8px 16px; border-radius: 8px; cursor: pointer;
+  font-weight: 600; font-size: 0.85rem;
+}
+.quiz-q button:hover { opacity: 0.9; }
+.quiz-fb { font-size: 0.8rem; margin-top: 4px; min-height: 1.2em; }
+.quiz-fb.correct { color: var(--good); }
+.quiz-fb.wrong { color: var(--bad); }
+
+@media (max-width: 500px) {
+  .ear-row { flex-direction: column; gap: 12px; }
+  .vs { padding-top: 0; }
+  .info-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Binaural Beats</h1>
+  <p>Frequency calculator & brainwave trainer</p>
+</header>
+
+<div class="container">
+  <div class="freq-panel">
+    <div class="ear-row">
+      <div class="ear-block">
+        <span class="ear-icon">👂</span>
+        <label>Left Ear</label>
+        <input type="number" class="left" id="leftFreq" value="100" min="1" max="1000" step="1" oninput="update()">
+        <div class="sub">Hz</div>
+      </div>
+      <div class="vs">vs</div>
+      <div class="ear-block">
+        <span class="ear-icon">👂</span>
+        <label>Right Ear</label>
+        <input type="number" class="right" id="rightFreq" value="110" min="1" max="1000" step="1" oninput="update()">
+        <div class="sub">Hz</div>
+      </div>
+    </div>
+
+    <div class="beat-display">
+      <div class="formula">| L − R | = beat frequency</div>
+      <div class="beat-hz" id="beatHz">10</div>
+      <div class="beat-label">Hz binaural beat</div>
+      <div class="state-badge" id="stateBadge">Alpha</div>
+    </div>
+
+    <div class="wave-viz">
+      <canvas id="waveCanvas"></canvas>
+    </div>
+
+    <div class="presets">
+      <button class="preset-btn" onclick="setFreq(200,240)">Gamma<span class="st">40 Hz · Peak Focus</span></button>
+      <button class="preset-btn" onclick="setFreq(200,220)">Beta<span class="st">20 Hz · Alert Energy</span></button>
+      <button class="preset-btn" onclick="setFreq(100,110)">Alpha<span class="st">10 Hz · Relaxed Flow</span></button>
+      <button class="preset-btn" onclick="setFreq(100,106)">Theta<span class="st">6 Hz · Deep Meditation</span></button>
+      <button class="preset-btn" onclick="setFreq(100,102)">Delta<span class="st">2 Hz · Deep Sleep</span></button>
+      <button class="preset-btn" onclick="setFreq(100,108)">Grounding<span class="st">8 Hz · Earth Resonance</span></button>
+    </div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card" onclick="setFreq(200,240)">
+      <h3 style="color:#c4b5fd">⚡ Gamma</h3>
+      <div class="range">30–100 Hz</div>
+      <div class="desc">Peak cognition, heightened perception, flow states. "Groundbreaking energy."</div>
+    </div>
+    <div class="info-card" onclick="setFreq(200,220)">
+      <h3 style="color:#93c5fd">🧠 Beta</h3>
+      <div class="range">14–30 Hz</div>
+      <div class="desc">Active thinking, alertness, focus. Your work/grind frequency.</div>
+    </div>
+    <div class="info-card" onclick="setFreq(100,110)">
+      <h3 style="color:#6ee7b7">🌿 Alpha</h3>
+      <div class="range">8–13 Hz</div>
+      <div class="desc">Relaxed alertness, calm focus. Bridge between conscious and subconscious.</div>
+    </div>
+    <div class="info-card" onclick="setFreq(100,106)">
+      <h3 style="color:#67e8f9">🌊 Theta</h3>
+      <div class="range">4–7 Hz</div>
+      <div class="desc">Deep meditation, creativity, twilight sleep. Theta is where insights arrive.</div>
+    </div>
+    <div class="info-card" onclick="setFreq(100,102)">
+      <h3 style="color:#a5b4fc">🌙 Delta</h3>
+      <div class="range">0.5–3 Hz</div>
+      <div class="desc">Dreamless sleep, healing, restoration. Body repair mode.</div>
+    </div>
+    <div class="info-card" onclick="setFreq(100,108)">
+      <h3 style="color:#fbbf24">🌍 Schumann</h3>
+      <div class="range">7.83 Hz</div>
+      <div class="desc">Earth's electromagnetic resonance. Grounding, primal connection.</div>
+    </div>
+  </div>
+
+  <div class="quiz-section">
+    <h2>Check Your Understanding</h2>
+    <div class="quiz-q">
+      <div class="q-text">1. Your therapist recommends a 8 Hz binaural beat. If right ear is 10 Hz, what's the left ear?</div>
+      <div class="q-row">
+        <input type="text" id="q1" placeholder="Type answer...">
+        <button onclick="checkQ1()">Check</button>
+      </div>
+      <div class="quiz-fb" id="q1fb"></div>
+    </div>
+    <div class="quiz-q">
+      <div class="q-text">2. Your brain perceives a 6 Hz beat from 100 Hz and 106 Hz. What brainwave state is this?</div>
+      <div class="q-row">
+        <input type="text" id="q2" placeholder="Type answer...">
+        <button onclick="checkQ2()">Check</button>
+      </div>
+      <div class="quiz-fb" id="q2fb"></div>
+    </div>
+    <div class="quiz-q">
+      <div class="q-text">3. For peak "groundbreaking energy exercising" — which frequency band should you target?</div>
+      <div class="q-row">
+        <input type="text" id="q3" placeholder="Type answer...">
+        <button onclick="checkQ3()">Check</button>
+      </div>
+      <div class="quiz-fb" id="q3fb"></div>
+    </div>
+  </div>
+
+  <div class="footer-links">
+    Binaural beats calculator · Headphones recommended · Not medical advice<br>
+    <a href="https://boomerjrtv.github.io/RedPrompt/walkthrough/">← Back to Eramba Walkthrough</a>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('waveCanvas');
+const ctx = canvas.getContext('2d');
+let animFrame;
+
+function resizeCanvas() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * devicePixelRatio;
+  canvas.height = rect.height * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+resizeCanvas();
+window.addEventListener('resize', () => { resizeCanvas(); draw(); });
+
+function update() {
+  const L = parseFloat(document.getElementById('leftFreq').value) || 0;
+  const R = parseFloat(document.getElementById('rightFreq').value) || 0;
+  const beat = Math.abs(L - R);
+  document.getElementById('beatHz').textContent = beat;
+  const state = getState(beat);
+  const badge = document.getElementById('stateBadge');
+  badge.textContent = state.name;
+  badge.className = 'state-badge state-' + state.css;
+  draw();
+}
+
+function getState(hz) {
+  if (hz > 30) return { name: 'Gamma ⚡', css: 'gamma' };
+  if (hz >= 14) return { name: 'Beta 🧠', css: 'beta' };
+  if (hz >= 8)  return { name: 'Alpha 🌿', css: 'alpha' };
+  if (hz >= 4)  return { name: 'Theta 🌊', css: 'theta' };
+  if (hz >= 0.5) return { name: 'Delta 🌙', css: 'delta' };
+  return { name: 'Sub-Delta', css: 'unknown' };
+}
+
+function draw() {
+  cancelAnimationFrame(animFrame);
+  const W = canvas.parentElement.clientWidth;
+  const H = canvas.parentElement.clientHeight;
+  resizeCanvas();
+
+  const L = parseFloat(document.getElementById('leftFreq').value) || 0;
+  const R = parseFloat(document.getElementById('rightFreq').value) || 0;
+
+  function frame(t) {
+    const w = canvas.width / devicePixelRatio;
+    const h = canvas.height / devicePixelRatio;
+    ctx.clearRect(0, 0, w, h);
+
+    // Background grid
+    ctx.strokeStyle = 'rgba(30,41,59,0.4)';
+    ctx.lineWidth = 1;
+    for (let y = 0; y < h; y += 30) {
+      ctx.beginPath();
+      ctx.moveTo(0, y + 0.5);
+      ctx.lineTo(w, y + 0.5);
+      ctx.stroke();
+    }
+
+    // Left wave (indigo)
+    ctx.strokeStyle = 'rgba(129,140,248,0.5)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let x = 0; x < w; x++) {
+      const y = h/4 + Math.sin(x * 0.008 * L + t * 0.001 * L) * 30;
+      if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Right wave (pink)
+    ctx.strokeStyle = 'rgba(244,114,182,0.5)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let x = 0; x < w; x++) {
+      const y = h/4 + 20 + Math.sin(x * 0.008 * R + t * 0.001 * R) * 30;
+      if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Beat wave (combined, bottom half)
+    const beat = Math.abs(L - R);
+    ctx.strokeStyle = 'rgba(251,191,36,0.7)';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    for (let x = 0; x < w; x++) {
+      const y = h * 0.7 + Math.sin(x * 0.008 * beat + t * 0.001 * beat) * 25;
+      if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Labels
+    ctx.fillStyle = 'rgba(148,163,184,0.6)';
+    ctx.font = '10px system-ui';
+    ctx.fillText('Left Ear', 10, h/4 - 40);
+    ctx.fillText('Right Ear', 10, h/4 - 5);
+    ctx.fillText('Binaural Beat', 10, h * 0.7 - 20);
+
+    animFrame = requestAnimationFrame(frame);
+  }
+  animFrame = requestAnimationFrame(frame);
+}
+
+function setFreq(L, R) {
+  document.getElementById('leftFreq').value = L;
+  document.getElementById('rightFreq').value = R;
+  update();
+}
+
+// Quiz checkers
+function checkQ1() {
+  const fb = document.getElementById('q1fb');
+  const ans = document.getElementById('q1').value.trim().toLowerCase();
+  // |10 - x| = 8 → x = 2 or 18
+  if (ans === '2' || ans === '2hz' || ans === '18' || ans === '18hz') {
+    fb.textContent = 'Correct! 2 Hz or 18 Hz — either creates an 8 Hz beat with 10 Hz.';
+    fb.className = 'quiz-fb correct';
+  } else {
+    fb.textContent = 'Not quite. |10 − x| = 8 → x = 2 or 18 Hz.';
+    fb.className = 'quiz-fb wrong';
+  }
+}
+
+function checkQ2() {
+  const fb = document.getElementById('q2fb');
+  const ans = document.getElementById('q2').value.trim().toLowerCase();
+  if (ans.includes('theta') || ans === 'θ') {
+    fb.textContent = 'Correct! 6 Hz is in the Theta range (4–7 Hz) — deep meditation.';
+    fb.className = 'quiz-fb correct';
+  } else {
+    fb.textContent = '6 Hz = Theta (4–7 Hz). Deep meditation and creativity.';
+    fb.className = 'quiz-fb wrong';
+  }
+}
+
+function checkQ3() {
+  const fb = document.getElementById('q3fb');
+  const ans = document.getElementById('q3').value.trim().toLowerCase();
+  if (ans.includes('gamma')) {
+    fb.textContent = 'Correct! Gamma (30+ Hz) — peak cognition, flow state, maximum energy.';
+    fb.className = 'quiz-fb correct';
+  } else {
+    fb.textContent = 'Gamma (30-100 Hz). Peak focus and heightened energy for exercise.';
+    fb.className = 'quiz-fb wrong';
+  }
+}
+
+update();
+</script>
+</body>
+</html>
