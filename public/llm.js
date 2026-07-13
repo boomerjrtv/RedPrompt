@@ -8,7 +8,9 @@
 // Exposes `window.RP_LLM` for the rest of the frontend.
 // =====================================================================
 
-import * as webllm from "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm/+esm";
+// Keep the audited version pinned so CDN updates cannot silently change the
+// runtime code or its licensing terms.
+import * as webllm from "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.84/+esm";
 
 const listeners = new Set();
 function emit(ev) { for (const fn of listeners) { try { fn(ev); } catch {} } }

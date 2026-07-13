@@ -84,4 +84,7 @@ Plus the practical side: iterative prompting, model-specific behavior, and known
 
 ## 📜 License
 
-MIT.
+RedPrompt's original code is licensed under the [MIT License](LICENSE).
+
+Third-party software, fonts, and model assets remain under their respective
+licenses. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for details.
